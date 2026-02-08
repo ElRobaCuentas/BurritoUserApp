@@ -3,7 +3,6 @@ import { LoadingScreen } from '../screens/loading/LoadingScreen';
 import { PermissionsScreen } from '../screens/permissions/PermissionsScreen';
 import { MapScreen } from '../screens/maps/MapScreen';
 import { HomeScreen } from '../screens/home/HomeScreen';
-
 export type RootStackParams = {
     LoadingScreen: undefined;
     PermissionsScreen: undefined;
