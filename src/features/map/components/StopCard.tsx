@@ -4,7 +4,7 @@ import { COLORS } from '../../../shared/theme/colors';
 
 interface StopCardProps {
   title: string;
-  imageSource: ImageSourcePropType;
+  imageSource: ImageSourcePropType; // ✅ Ahora recibe el require local
 }
 
 export const StopCard = ({ title, imageSource }: StopCardProps) => {
@@ -15,14 +15,12 @@ export const StopCard = ({ title, imageSource }: StopCardProps) => {
           <Text style={styles.closeText}>✕</Text>
         </View>
 
-        {/* 🚨 EL HACK: Envolvemos la imagen en un componente Text */}
-        <Text style={styles.imageWrapper}>
-          <Image 
-            source={imageSource} 
-            style={styles.image} 
-            resizeMode="cover"
-          />
-        </Text>
+        {/* ✅ Imagen instantánea, sin hacks ni onLoad */}
+        <Image 
+          source={imageSource} 
+          style={styles.image} 
+          resizeMode="cover"
+        />
         
         <View style={styles.info}>
           <Text style={styles.title} numberOfLines={2}>
@@ -36,26 +34,21 @@ export const StopCard = ({ title, imageSource }: StopCardProps) => {
 };
 
 const styles = StyleSheet.create({
-  // 🔥 Es crucial usar tamaños fijos (píxeles), NO porcentajes
   bubbleContainer: { alignItems: 'center', width: 160 },
   card: {
-    width: 160, // Tamaño fijo
+    width: '100%',
     backgroundColor: 'white',
     borderRadius: 12,
     borderWidth: 2,
     borderColor: COLORS.primary,
     overflow: 'hidden',
   },
-  imageWrapper: {
-    width: 160,
-    height: 80,
-    lineHeight: 80, // Evita que el Text colapse la imagen
-  },
   image: {
-    width: 160, 
-    height: 80, 
+    width: '100%',
+    height: 80,
+    backgroundColor: '#e0e0e0',
   },
-  info: { padding: 8, alignItems: 'center', width: 160 },
+  info: { padding: 8, alignItems: 'center', width: '100%' },
   title: { fontSize: 12, fontWeight: '900', color: COLORS.primary, textAlign: 'center' },
   closeButton: {
     position: 'absolute', top: 5, right: 5, backgroundColor: '#FF0000',
