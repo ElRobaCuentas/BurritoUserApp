@@ -11,7 +11,7 @@ export const LoadingScreen = () => {
     const timer = setTimeout(() => {
       navigation.reset({
         index: 0,
-        routes: [{ name: 'MapScreen' }],
+        routes: [{ name: 'MainApp' }],
       });
     }, 1500);
 

@@ -1,13 +1,13 @@
 import { createStackNavigator } from '@react-navigation/stack';
 import { HomeScreen } from '../../features/home/screen/HomeScreen';
 import { LoadingScreen } from '../screen/LoadingScreen';
-import { MapScreen } from '../../features/map/screen/MapScreen';
+import { DrawerNavigator } from './DrawerNavigator';
+
 export type RootStackParams = {
     LoadingScreen: undefined;
-    MapScreen: undefined;
     HomeScreen: undefined;
+    MainApp: undefined; // 👈 Nuevo nombre para la app principal
 }
-
 
 const Stack = createStackNavigator<RootStackParams>();
 
@@ -17,14 +17,12 @@ export const StackNavigator = () =>  {
         initialRouteName='HomeScreen'
         screenOptions={{
             headerShown: false,
-            cardStyle: {
-                backgroundColor: 'white'
-            }
+            cardStyle: { backgroundColor: 'white' }
         }}
     >
       <Stack.Screen name="HomeScreen" component={HomeScreen} />
       <Stack.Screen name="LoadingScreen" component={LoadingScreen} />
-      <Stack.Screen name="MapScreen" component={MapScreen} />
+      <Stack.Screen name="MainApp" component={DrawerNavigator} /> 
     </Stack.Navigator>
   );
 }
