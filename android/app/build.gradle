@@ -2,6 +2,7 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+def isHermesEnabled = (project.findProperty('hermesEnabled') ?: "true").toBoolean()
 project.ext.vectoricons = [
     iconFontNames: ['Ionicons.ttf', 'MaterialCommunityIcons.ttf']
 ]
@@ -115,10 +116,9 @@ android {
 }
 
 dependencies {
-    // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
-    if (hermesEnabled.toBoolean()) {
+    if (isHermesEnabled) { 
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
