@@ -3,7 +3,7 @@ import { StyleSheet, View, Image } from 'react-native';
 import Mapbox from '@rnmapbox/maps';
 import { BurritoLocation } from '../types';
 import { COLORS } from '../../../shared/theme/colors';
-import { UNMSM_LOCATION, RUTA_OFICIAL, PARADEROS } from '../constants/map_route';
+import { UNMSM_LOCATION,PARADEROS, RUTA_GEOJSON } from '../constants/map_route';
 import { FAB } from './FAB';
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
@@ -48,24 +48,19 @@ export const Map = ({ burritoLocation, isDarkMode }: Props) => {
           }}
         />
 
-        <Mapbox.ShapeSource id="routeSource" shape={{
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: RUTA_OFICIAL.map(c => [c.longitude, c.latitude])
-          },
-          properties: {}
-        }}>
-          <Mapbox.LineLayer
-            id="routeLayer"
-            style={{
-              lineColor: COLORS.primary,
-              lineWidth: 5,
-              lineCap: 'round',
-              lineJoin: 'round',
-            }}
-          />
-        </Mapbox.ShapeSource>
+        <Mapbox.ShapeSource id="routeSource" shape={RUTA_GEOJSON}>
+        <Mapbox.LineLayer
+          id="routeLayer"
+          style={{
+            lineColor: COLORS.primary,
+            lineWidth: 5,
+            // 🛠️ ESTO ES CLAVE: Suaviza las esquinas y los finales de línea
+            lineJoin: 'round', 
+            lineCap: 'round',
+            lineOpacity: 0.85,
+          }}
+        />
+</Mapbox.ShapeSource>
 
         {/* 📍 PARADEROS */}
         {PARADEROS.map((p) => (
