@@ -43,12 +43,13 @@ export const LoginScreen = () => {
 
   const handleFinish = () => {
   if (name.trim().length > 2 && selectedId) {
-    // A) Guardamos en el store (Zustand)
-    setProfile(name, selectedId);
+    // 1. Guardamos
+    setProfile(name.trim(), selectedId);
 
-    // B) ¡NUEVO! Forzamos la navegación manual
-    // Aunque estemos en modo desarrollo, esto nos llevará al mapa
-    navigation.replace('MainApp'); 
+    // 2. Esperamos un pestañeo para que el Store se asiente
+    setTimeout(() => {
+      navigation.replace('MainApp');
+    }, 150); 
   }
 };
 
@@ -62,9 +63,14 @@ export const LoginScreen = () => {
 
       <View style={styles.centerContainer}>
         {AVATARES.map((item) => {
-          const isSelected = selectedId === item.id;
+          const selectAvatar = (id: string) => {
+  console.log("AVATAR SELECCIONADO:", id); // <--- DEBE DECIR av1, av2...
+  setSelectedId(id);
+  setStep(2);
+  transition.value = withSpring(1, { damping: 12 });
+};
           const animatedStyle = useAnimatedStyle(() => {
-            if (isSelected) {
+            if (selectedId) {
               return {
                 transform: [
                   { translateY: interpolate(transition.value, [0, 1], [0, -height * 0.25]) },

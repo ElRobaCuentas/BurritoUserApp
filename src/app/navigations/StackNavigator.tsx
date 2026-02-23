@@ -5,7 +5,7 @@ import { useUserStore } from '../../store/userStore';
 
 // Pantallas
 import { LoginScreen } from '../../features/auth/screen/LoginScreen'; 
-import { MapScreen } from '../../features/map/screen/MapScreen';
+import { DrawerNavigator } from './DrawerNavigator';
 import { LoadingScreen } from '../screen/LoadingScreen';
 
 // Definición de las rutas del Stack
@@ -44,8 +44,8 @@ export const StackNavigator = () => {
           mientras pules el diseño para que el Navigator siempre las encuentre.
       */}
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
-      <Stack.Screen name="MainApp" component={MapScreen} />
-      <Stack.Screen name="LoadingScreen" component={LoadingScreen} />
+     <Stack.Screen name="MainApp" component={DrawerNavigator} />      
+     <Stack.Screen name="LoadingScreen" component={LoadingScreen} />
       
     </Stack.Navigator>
   );

@@ -20,6 +20,7 @@
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/stack": "^7.6.16",
     "@rnmapbox/maps": "^10.2.10",
+    "lottie-react-native": "^7.3.6",
     "react": "^19.2.0",
     "react-native": "0.83.1",
     "react-native-bootsplash": "^7.1.0",
