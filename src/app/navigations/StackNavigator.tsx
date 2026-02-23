@@ -1,44 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { View } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useUserStore } from '../../store/userStore';
 
 // Pantallas
-import { HomeScreen } from '../../features/home/screen/HomeScreen';
+import { LoginScreen } from '../../features/auth/screen/LoginScreen'; 
 import { MapScreen } from '../../features/map/screen/MapScreen';
 import { LoadingScreen } from '../screen/LoadingScreen';
 
-// 1. Definimos los parámetros de las rutas
+// Definición de las rutas del Stack
 export type RootStackParams = {
-  HomeScreen: undefined;
+  LoginScreen: undefined;
   MainApp: undefined;
   LoadingScreen: undefined;
 };
 
-// 2. ¡AQUÍ ESTÁ LA SOLUCIÓN! Inicializamos el objeto Stack
 const Stack = createStackNavigator<RootStackParams>();
 
 export const StackNavigator = () => {
-  // Leemos el estado global del usuario
   const hasProfile = useUserStore((state) => state.hasProfile);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Pequeño delay para que Zustand cargue los datos del storage
+    const timeout = setTimeout(() => setIsReady(true), 200);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  // Mientras el Store se prepara, mostramos una pantalla blanca de seguridad
+  if (!isReady) {
+    return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
+  }
 
   return (
     <Stack.Navigator
-      // Si ya tiene perfil, lo mandamos al mapa, si no, a la bienvenida
-      initialRouteName={hasProfile ? 'MainApp' : 'HomeScreen'}
+      // 🛠️ MODO DESARROLLO: 
+      // Forzamos 'LoginScreen' para que puedas pulir el diseño.
+      // Cuando termines, cámbialo a: {hasProfile ? 'MainApp' : 'LoginScreen'}
+      initialRouteName={'LoginScreen'} 
       screenOptions={{ headerShown: false }}
     >
-      {/* Si no tiene perfil, solo mostramos HomeScreen. 
-          Esto evita que un usuario curioso "vuelva atrás" al login 
-          una vez que ya está en el mapa.
+      {/* IMPORTANTE: Ponemos las pantallas fuera de condicionales 
+          mientras pules el diseño para que el Navigator siempre las encuentre.
       */}
-      {!hasProfile ? (
-        <Stack.Screen name="HomeScreen" component={HomeScreen} />
-      ) : (
-        <>
-          <Stack.Screen name="MainApp" component={MapScreen} />
-          <Stack.Screen name="LoadingScreen" component={LoadingScreen} />
-        </>
-      )}
+      <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      <Stack.Screen name="MainApp" component={MapScreen} />
+      <Stack.Screen name="LoadingScreen" component={LoadingScreen} />
+      
     </Stack.Navigator>
   );
 };

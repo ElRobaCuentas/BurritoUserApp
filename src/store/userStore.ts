@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserState {
   username: string | null;
-  avatar: string | null; // Guardaremos el nombre del archivo o un ID
+  avatar: string | null;
   hasProfile: boolean;
   setProfile: (name: string, avatar: string) => void;
   logout: () => void;
