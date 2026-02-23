@@ -34,20 +34,23 @@ export const Map = ({ burritoLocation, isDarkMode }: Props) => {
   return (
     <View style={styles.container}>
       <Mapbox.MapView
-  style={styles.map}
-  // 🚨 ESTO ES LO QUE HACE QUE EL DRAWER SE VEA. NO LO QUITES.
-  // @ts-ignore
-  androidRenderMode="texture" 
-  surfaceView={false} 
+          style={styles.map}
+          // 🚨 ESTO ES LO QUE HACE QUE EL DRAWER SE VEA. NO LO QUITES.
+          // @ts-ignore
+          androidRenderMode="texture" 
+          surfaceView={false} 
   
-  // 🚀 ESTO AYUDA A QUE TU EMULADOR NO SE PONGA BLANCO
-  layerAntialiasingAllow={false} // Desactivar esto quita carga a la GPU del emulador
-  
-  logoEnabled={false}
-  attributionEnabled={false}
-  styleURL={isDarkMode ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Street}
-  onPress={() => setSelectedStopId(null)}
->
+          // 🚀 ESTO AYUDA A QUE TU EMULADOR NO SE PONGA BLANCO
+          pixelRatio={0.8}               // Baja la densidad de píxeles un 20% (Casi imperceptible, pero libera mucha GPU)
+          layerAntialiasingAllow={false} // Desactiva el suavizado de bordes (Ahorra mucha memoria de video)
+          attributionEnabled={false}     // Quita procesos de renderizado de texto innecesarios
+          logoEnabled={false}            // Quita un asset extra de la memoria
+          compassEnabled={false}
+
+
+          styleURL={isDarkMode ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Street}
+          onPress={() => setSelectedStopId(null)}
+      >
         <Mapbox.Camera
           ref={cameraRef}
           defaultSettings={{

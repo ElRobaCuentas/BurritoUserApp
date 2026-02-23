@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Switch } from 'react-native'; // 👈 Switch añadido
+import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, Dimensions } from 'react-native';
 import { useDrawerStore } from '../../../store/drawerStore';
 import { useUserStore } from '../../../store/userStore';
 import { useThemeStore } from '../../../store/themeStore'; 
@@ -7,11 +7,11 @@ import { COLORS } from '../../../shared/theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 
+const { width } = Dimensions.get('window');
+
 export const CustomDrawer = () => {
   const { isOpen, closeDrawer } = useDrawerStore() as any;
   const { username, avatar, logout } = useUserStore();
-  
-  // 🛠️ Sacamos isDarkMode y la acción para cambiarlo
   const { isDarkMode, toggleTheme } = useThemeStore() as any; 
 
   if (!isOpen) return null;
@@ -19,10 +19,12 @@ export const CustomDrawer = () => {
   const initial = username ? username.charAt(0).toUpperCase() : 'U';
 
   const theme = {
-    bg: isDarkMode ? '#121212' : '#FFFFFF',
-    text: isDarkMode ? '#FFFFFF' : '#333333',
-    divider: isDarkMode ? '#2C2C2C' : '#F0F0F0',
-    headerGradient: isDarkMode ? ['#1f2937', '#111827'] : [COLORS.primary, '#007BB5']
+    bg: isDarkMode ? '#121212' : '#F8F9FA',
+    card: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+    text: isDarkMode ? '#FFFFFF' : '#1A1A1A',
+    subText: isDarkMode ? '#A0A0A0' : '#666666',
+    divider: isDarkMode ? '#333333' : '#E0E0E0',
+    headerGradient: isDarkMode ? ['#0F172A', '#1E293B'] : [COLORS.primary, '#00A8E8']
   };
 
   return (
@@ -30,44 +32,63 @@ export const CustomDrawer = () => {
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={closeDrawer} />
       
       <View style={[styles.drawerContainer, { backgroundColor: theme.bg }]}>
+        {/* HEADER CON GRADIENTE */}
         <LinearGradient colors={theme.headerGradient} style={styles.header}>
-          <View style={styles.avatarContainer}>
-            {avatar ? <Image source={{ uri: avatar }} style={styles.avatarImage} /> : <Text style={styles.avatarText}>{initial}</Text>}
-          </View>
-          <Text style={styles.userName}>{username || 'Pepe'}</Text>
-          <Text style={styles.userRole}>Estudiante UNMSM</Text>
+            <Text style={styles.brandText}>Burrito UNMSM</Text>
         </LinearGradient>
 
-        <View style={styles.content}>
-          
-          {/* 🌙 AQUÍ ESTÁ LA MALDITA PALANCA QUE ME OLVIDÉ */}
-          <View style={styles.menuItemSpace}>
-            <View style={styles.row}>
-              <Icon name="theme-light-dark" size={24} color={COLORS.primary} />
-              <Text style={[styles.menuText, { color: theme.text }]}>Modo Oscuro</Text>
+        {/* AVATAR OVERLAP */}
+        <View style={styles.avatarWrapper}>
+            <View style={[styles.avatarContainer, { borderColor: theme.bg, backgroundColor: theme.card }]}>
+                {avatar ? (
+                    <Image source={{ uri: avatar }} style={styles.avatarImage} />
+                ) : (
+                    <Text style={[styles.avatarText, { color: COLORS.primary }]}>{initial}</Text>
+                )}
             </View>
-            <Switch
-              value={isDarkMode}
-              onValueChange={toggleTheme} // 👈 Esta es la acción que cambia todo
-              trackColor={{ false: '#767577', true: COLORS.primary }}
-              thumbColor={isDarkMode ? '#f4f3f4' : '#f4f3f4'}
-            />
+        </View>
+
+        {/* INFO USUARIO - MÁS GENÉRICO */}
+        <View style={styles.userInfo}>
+            <Text style={[styles.userName, { color: theme.text }]}>{username || 'Usuario'}</Text>
+            <Text style={[styles.userRole, { color: theme.subText }]}>Comunidad San Marquina</Text>
+        </View>
+
+        <View style={styles.content}>
+          {/* TARJETA DE CONFIGURACIÓN */}
+          <View style={[styles.menuCard, { backgroundColor: theme.card }]}>
+            <View style={styles.menuItemSpace}>
+              <View style={styles.row}>
+                <View style={styles.iconCircle}>
+                  <Icon name="theme-light-dark" size={20} color={COLORS.primary} />
+                </View>
+                <Text style={[styles.menuText, { color: theme.text }]}>Modo Oscuro</Text>
+              </View>
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#D1D1D1', true: COLORS.primary }}
+                thumbColor="#f4f3f4"
+              />
+            </View>
           </View>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Icon name="account-outline" size={24} color={COLORS.primary} />
-            <Text style={[styles.menuText, { color: theme.text }]}>Mi Perfil</Text>
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: theme.divider }]} />
-
+          {/* CERRAR SESIÓN AL FINAL DEL TODO */}
           <TouchableOpacity 
-            style={styles.logoutButton} 
+            style={[styles.logoutButton, { backgroundColor: isDarkMode ? 'rgba(255,82,82,0.1)' : '#FFF5F5' }]} 
             onPress={() => { logout(); closeDrawer(); }}
           >
-            <Icon name="logout" size={24} color="#FF5252" />
-            <Text style={styles.logoutText}>Cerrar Sesión</Text>
+            <View style={styles.row}>
+              <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,82,82,0.15)' }]}>
+                <Icon name="logout-variant" size={20} color="#FF5252" />
+              </View>
+              <Text style={styles.logoutText}>Cerrar Sesión</Text>
+            </View>
           </TouchableOpacity>
+        </View>
+        
+        <View style={styles.footer}>
+          <Text style={[styles.versionText, { color: theme.subText }]}>v1.0.0</Text>
         </View>
       </View>
     </View>
@@ -76,28 +97,38 @@ export const CustomDrawer = () => {
 
 const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, zIndex: 9999 },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
-  drawerContainer: { width: 280, height: '100%', elevation: 16 },
-  header: { padding: 30, paddingTop: 60, alignItems: 'center' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
+  drawerContainer: { width: width * 0.75, height: '100%', elevation: 20 },
+  header: { height: 140, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  brandText: { color: 'white', fontSize: 16, fontWeight: 'bold', opacity: 0.8, letterSpacing: 1 },
+  
+  avatarWrapper: { alignItems: 'center', marginTop: -45, marginBottom: 10 },
   avatarContainer: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white', marginBottom: 10, overflow: 'hidden'
+    width: 90, height: 90, borderRadius: 45, borderWidth: 4,
+    justifyContent: 'center', alignItems: 'center', elevation: 4,
   },
-  avatarImage: { width: '100%', height: '100%' },
-  avatarText: { color: 'white', fontSize: 35, fontWeight: 'bold' },
-  userName: { color: 'white', fontSize: 22, fontWeight: 'bold' },
-  userRole: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
-  content: { padding: 20, flex: 1 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
-  menuItemSpace: { 
+  avatarImage: { width: '100%', height: '100%', borderRadius: 45 },
+  avatarText: { fontSize: 38, fontWeight: 'bold' },
+  
+  userInfo: { alignItems: 'center', marginBottom: 20 },
+  userName: { fontSize: 22, fontWeight: 'bold' },
+  userRole: { fontSize: 13, marginTop: 2, fontWeight: '500' },
+
+  content: { paddingHorizontal: 15, flex: 1, paddingBottom: 20 },
+  menuCard: { borderRadius: 15, paddingHorizontal: 15, paddingVertical: 8, elevation: 1 },
+  menuItemSpace: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  iconCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,168,232,0.1)', justifyContent: 'center', alignItems: 'center' },
+  menuText: { marginLeft: 12, fontSize: 15, fontWeight: '600' },
+
+  logoutButton: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    justifyContent: 'space-between', // Separa el texto del switch
-    paddingVertical: 15 
+    padding: 10, 
+    borderRadius: 12,
+    marginTop: 'auto', // Esto lo empuja hasta abajo
   },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  menuText: { marginLeft: 15, fontSize: 16, fontWeight: '500' },
-  divider: { height: 1, marginVertical: 20 },
-  logoutButton: { flexDirection: 'row', alignItems: 'center', marginTop: 'auto', paddingBottom: 25 },
-  logoutText: { marginLeft: 15, fontSize: 16, color: '#FF5252', fontWeight: 'bold' },
+  logoutText: { marginLeft: 12, fontSize: 15, color: '#FF5252', fontWeight: 'bold' },
+  footer: { paddingBottom: 20, alignItems: 'center' },
+  versionText: { fontSize: 11, opacity: 0.4, fontWeight: 'bold' }
 });
