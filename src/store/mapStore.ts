@@ -8,7 +8,6 @@ interface MapState {
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  // 🚀 CAMBIO CLAVE: Iniciamos en false para respetar la vista estática inicial
   isFollowing: false, 
   setIsFollowing: (val) => set({ isFollowing: val }),
   command: null,
