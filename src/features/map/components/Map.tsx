@@ -4,65 +4,109 @@ import Mapbox from '@rnmapbox/maps';
 import { BurritoLocation } from '../types';
 import { COLORS } from '../../../shared/theme/colors';
 import { UNMSM_LOCATION, PARADEROS, RUTA_GEOJSON } from '../constants/map_route';
-import { FAB } from './FAB';
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
+import { useMapStore } from '../../../store/mapStore'; 
 
-Mapbox.setAccessToken('pk.eyJ1IjoiZWxyb2JhY3VlbnRhcyIsImEiOiJjbWx4MDc1Y2gwanpoM2txMzd1Mzl6YjN6In0.9c9y92FLxw_MeIZaX4EdPQ'); 
+Mapbox.setAccessToken('pk.eyJ1IjoiZWxyb2JhY3VlbnRasIsImEiOiJjbWx4MDc1Y2gwanpoM2txMzd1Mzl6YjN6In0.9c9y92FLxw_MeIZaX4EdPQ'); 
 
-interface Props {
-  burritoLocation: BurritoLocation | null;
-  isDarkMode: boolean;
-}
+// 📍 VISTA MAESTRA (Basada en tu captura image_e186a6.png)
+const UNMSM_STATIC_VIEW = {
+  center: [-77.0830, -12.0575], 
+  zoom: 15.2 
+};
 
-export const Map = ({ burritoLocation, isDarkMode }: Props) => {
+const UNMSM_BOUNDS = {
+  ne: [-77.0720, -12.0450], 
+  sw: [-77.0980, -12.0700]  
+};
+
+export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const cameraRef = useRef<Mapbox.Camera>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
 
+  // 📡 Leemos el Store (isFollowing ahora inicia en FALSE por defecto)
+  const { isFollowing, setIsFollowing, command, setCommand } = useMapStore();
   const selectedStopData = PARADEROS.find(p => p.id === selectedStopId);
 
+  // 1️⃣ LOGICA DE BOTONES (Manual)
   useEffect(() => {
-    if (burritoLocation) {
+    if (command === 'center') {
+      // Regresa a tu "Vista Maestra" estática
+      cameraRef.current?.setCamera({
+        centerCoordinate: UNMSM_STATIC_VIEW.center,
+        zoomLevel: UNMSM_STATIC_VIEW.zoom,
+        animationDuration: 2500,
+        animationMode: 'flyTo',
+      });
+      setIsFollowing(false);
+      setCommand(null);
+    } else if (command === 'follow') {
+      // ✅ AHORA EL ZOOM SE HACE AQUÍ, BAJO DEMANDA
+      if (burritoLocation) {
+        cameraRef.current?.setCamera({
+          centerCoordinate: [burritoLocation.longitude, burritoLocation.latitude],
+          zoomLevel: 17.5,
+          animationDuration: 2500,
+          animationMode: 'flyTo',
+        });
+      }
+      setIsFollowing(true);
+      setCommand(null);
+    }
+  }, [command, burritoLocation]);
+
+  // 2️⃣ RASTREO EN TIEMPO REAL (Solo si isFollowing es true)
+  useEffect(() => {
+    if (isFollowing && burritoLocation) {
       cameraRef.current?.setCamera({
         centerCoordinate: [burritoLocation.longitude, burritoLocation.latitude],
-        zoomLevel: 16, 
-        animationDuration: 2000,
+        zoomLevel: 17.5, 
+        animationDuration: 1000, 
+        animationMode: 'linearTo', 
       });
     }
-  }, [burritoLocation]);
+  }, [burritoLocation, isFollowing]);
+
+  // 3️⃣ LIBERAR CÁMARA AL TOCAR
+  const handleRegionWillChange = (e: any) => {
+    if (e?.properties?.isUserInteraction && isFollowing) {
+      setIsFollowing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Mapbox.MapView
           style={styles.map}
-          // 🚨 ESTO ES LO QUE HACE QUE EL DRAWER SE VEA. NO LO QUITES.
           // @ts-ignore
           androidRenderMode="texture" 
           surfaceView={false} 
-  
-          // 🚀 ESTO AYUDA A QUE TU EMULADOR NO SE PONGA BLANCO
-          pixelRatio={0.8}               // Baja la densidad de píxeles un 20% (Casi imperceptible, pero libera mucha GPU)
-          layerAntialiasingAllow={false} // Desactiva el suavizado de bordes (Ahorra mucha memoria de video)
-          attributionEnabled={false}     // Quita procesos de renderizado de texto innecesarios
-          logoEnabled={false}            // Quita un asset extra de la memoria
+          pixelRatio={0.8}               
+          layerAntialiasingAllow={false} 
+          attributionEnabled={false}     
+          logoEnabled={false}            
           compassEnabled={false}
-
-
           styleURL={isDarkMode ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Street}
           onPress={() => setSelectedStopId(null)}
+          onRegionWillChange={handleRegionWillChange}
       >
         <Mapbox.Camera
           ref={cameraRef}
           defaultSettings={{
-            centerCoordinate: [UNMSM_LOCATION.longitude, UNMSM_LOCATION.latitude],
-            zoomLevel: 16,
+            // 🚀 INICIO ESTÁTICO: Exactamente como tu imagen
+            centerCoordinate: UNMSM_STATIC_VIEW.center,
+            zoomLevel: UNMSM_STATIC_VIEW.zoom,
           }}
+          maxBounds={UNMSM_BOUNDS} 
+          minZoomLevel={14.0}      
         />
 
-        {/* 🛣️ RUTA GEOJSON */}
+        {/* 🛣️ RUTA (Debajo de todo) */}
         <Mapbox.ShapeSource id="routeSource" shape={RUTA_GEOJSON}>
           <Mapbox.LineLayer
             id="routeLayer"
+            belowLayerID="poi-label" 
             style={{
               lineColor: COLORS.primary,
               lineWidth: 5,
@@ -87,42 +131,31 @@ export const Map = ({ burritoLocation, isDarkMode }: Props) => {
           </Mapbox.PointAnnotation>
         ))}
 
-        {/* 🛠️ TARJETA FLOTANTE DE PARADERO */}
+        {/* 🛠️ CARD DE PARADERO */}
         {selectedStopData && (
           <Mapbox.MarkerView 
             coordinate={[selectedStopData.longitude, selectedStopData.latitude]}
             anchor={{ x: 0.5, y: 1.1 }} 
           >
-            <StopCard 
-              title={selectedStopData.name} 
-              onClose={() => setSelectedStopId(null)} 
-            />
+            <StopCard title={selectedStopData.name} onClose={() => setSelectedStopId(null)} />
           </Mapbox.MarkerView>
         )}
 
-        {/* 🚌 EL BURRITO */}
+        {/* 🚌 EL BURRITO (Encima de la ruta siempre) */}
         {burritoLocation && (
-          <Mapbox.MarkerView coordinate={[burritoLocation.longitude, burritoLocation.latitude]}>
+          <Mapbox.PointAnnotation 
+            key="burrito-bus" 
+            id="burrito-bus" 
+            coordinate={[burritoLocation.longitude, burritoLocation.latitude]}
+          >
             <View style={{ transform: [{ rotate: `${burritoLocation.heading || 0}deg` }] }}>
               <View style={styles.busGlow}>
                 <Image source={require('../../../assets/bus.png')} style={styles.busImage} />
               </View>
             </View>
-          </Mapbox.MarkerView>
+          </Mapbox.PointAnnotation>
         )}
       </Mapbox.MapView>
-
-      <FAB 
-        isFollowingBus={true}
-        onFollowBus={() => {}}
-        onCenterMap={() => {
-            cameraRef.current?.setCamera({
-                centerCoordinate: [UNMSM_LOCATION.longitude, UNMSM_LOCATION.latitude],
-                zoomLevel: 16,
-                animationDuration: 1000
-            });
-        }}
-      />
     </View>
   );
 };

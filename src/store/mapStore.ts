@@ -8,7 +8,8 @@ interface MapState {
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  isFollowing: true, // Por defecto arrancamos siguiendo al bus
+  // 🚀 CAMBIO CLAVE: Iniciamos en false para respetar la vista estática inicial
+  isFollowing: false, 
   setIsFollowing: (val) => set({ isFollowing: val }),
   command: null,
   setCommand: (cmd) => set({ command: cmd }),
