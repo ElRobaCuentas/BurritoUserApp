@@ -15,17 +15,16 @@ const CustomDrawerContent = (props: any) => {
 
   const getAvatarColor = (id: string | null) => {
     const avatarColors: { [key: string]: string } = {
-      av1: '#FFBD59', // Amarillo
-      av2: '#FF5757', // Rojo
-      av3: '#8C52FF', // Morado
-      av4: '#5CE1E6', // Celeste
+      av1: '#FFBD59', // Perro
+      av2: '#FF5757', // Bus
+      av3: '#8C52FF', // Estudiante
+      av4: '#5CE1E6', // Libro
     };
     return (id && avatarColors[id]) ? avatarColors[id] : '#E0E0E0';
   };
 
   const bgColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#1A1A1A';
-  const subTextColor = isDarkMode ? '#A0A0A0' : '#666666';
   const dividerColor = isDarkMode ? '#333333' : '#F0F0F0';
   const iconColor = isDarkMode ? COLORS.primary : '#555555';
 
@@ -33,9 +32,7 @@ const CustomDrawerContent = (props: any) => {
     <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 0 }} style={{ backgroundColor: bgColor }}>
       <View style={styles.drawerHeader}>
         <View style={[styles.coverPhoto, { backgroundColor: COLORS.primary }]} />
-        
         <View style={styles.userInfoSection}>
-          {/* Avatar con Color Dinámico, Sombra y Letra Inicial */}
           <View style={[
             styles.avatar, 
             { 
@@ -49,13 +46,10 @@ const CustomDrawerContent = (props: any) => {
               {username ? username.charAt(0).toUpperCase() : 'U'}
             </Text>
           </View>
-          
           <View style={{ marginTop: 10 }}>
             <Text style={[styles.userName, { color: textColor }]}>
                 {username || 'Usuario'}
             </Text>
-            
-            {/* Badge de Estudiante Sanmarquino */}
             <View style={styles.statusBadge}>
               <Icon name="school" size={14} color="#FFF" />
               <Text style={styles.userStatusText}>ESTUDIANTE UNMSM</Text>
@@ -64,14 +58,12 @@ const CustomDrawerContent = (props: any) => {
         </View>
       </View>
 
-      {/* Lista de Navegación del Drawer */}
       <View style={{ paddingHorizontal: 10 }}>
         <DrawerItemList {...props} />
       </View>
 
       <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
-      {/* Sección de Configuración y Tema */}
       <View style={styles.themeSection}>
         <View style={styles.themeRow}>
           <Icon name="weather-night" size={24} color={iconColor} />
@@ -85,11 +77,7 @@ const CustomDrawerContent = (props: any) => {
         />
       </View>
 
-      {/* Botón de Cerrar Sesión */}
-      <TouchableOpacity 
-        style={styles.logoutButton} 
-        onPress={() => logout()}
-      >
+      <TouchableOpacity style={styles.logoutButton} onPress={() => logout()}>
         <Icon name="logout" size={22} color="#FF5757" />
         <Text style={styles.logoutText}>Cerrar Sesión</Text>
       </TouchableOpacity>
@@ -108,26 +96,24 @@ export const DrawerNavigator = () => {
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
-      detachInactiveScreens={false} 
       screenOptions={{
-    headerShown: true, 
-    headerTitle: 'Burrito UNMSM',
-    headerTransparent: true,
-    headerTintColor: COLORS.primary,
-    drawerStyle: { width: 280 },
-    // 🚨 CONFIGURACIÓN CRÍTICA
-    drawerType: 'front', 
-    overlayColor: 'rgba(0,0,0,0.5)', 
-    detachInactiveScreens: false,
-  } as any}
+        // 🚨 SOLUCIÓN: Quitamos el header nativo para que el Velo sea el único dueño de la pantalla superior
+        headerShown: false, 
+        drawerStyle: { width: 280 },
+        drawerType: 'front', 
+        overlayColor: 'rgba(0,0,0,0.5)', 
+        // Optimizaciones de rendimiento para evitar parpadeos en el mapa
+        unmountOnBlur: false,
+        detachInactiveScreens: false,
+      } as any}
     >
       <Drawer.Screen 
         name="MapScreen" 
         component={MapScreen} 
         options={{ 
-            unmountOnBlur: false, 
             title: 'Mapa de Rutas',
-drawerIcon: ({color}: {color: string}) => <Icon name="map-marker-radius" size={22} color={color} />        } as any} 
+            drawerIcon: ({color}) => <Icon name="map-marker-radius" size={22} color={color} />
+        }} 
       />
     </Drawer.Navigator>
   );
