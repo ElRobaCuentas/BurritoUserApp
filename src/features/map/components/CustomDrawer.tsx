@@ -18,6 +18,7 @@ import Animated, {
   FadeOut,
   Layout // Para animar el crecimiento de la tarjeta
 } from 'react-native-reanimated';
+import { TYPOGRAPHY } from '../../../shared/theme/typography';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.72;
@@ -194,7 +195,7 @@ export const CustomDrawer = () => {
         </View>
         
         <View style={styles.footer}>
-          <Text style={[styles.versionText, { color: theme.subText }]}>UNMSM - 2024</Text>
+          <Text style={[styles.versionText, { color: theme.subText }]}>v.1.0</Text>
         </View>
       </Animated.View>
     </View>
@@ -210,26 +211,42 @@ const styles = StyleSheet.create({
     overflow: 'hidden', position: 'absolute', left: 0, top: 0, bottom: 0,
   },
   header: { height: 160, paddingTop: 40, alignItems: 'center' },
-  brandText: { color: 'white', fontSize: 14, fontWeight: '900', opacity: 0.9, letterSpacing: 2 },
-  avatarWrapper: { alignItems: 'center', marginTop: -50, marginBottom: 10 },
+brandText: { 
+    color: 'white', 
+    fontSize: 14, 
+    fontFamily: TYPOGRAPHY.primary.bold, // 👈 Marca fuerte
+    opacity: 0.9, 
+    letterSpacing: 2 
+  },  avatarWrapper: { alignItems: 'center', marginTop: -50, marginBottom: 10 },
   avatarContainer: {
     width: 100, height: 100, borderRadius: 50, borderWidth: 4,
     justifyContent: 'center', alignItems: 'center', elevation: 10,
   },
   avatarImage: { width: '100%', height: '100%', borderRadius: 50, resizeMode: 'cover' },
   userInfo: { alignItems: 'center', marginBottom: 25, paddingHorizontal: 10 },
-  userName: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
-  facultyBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 6 },
-  facultyText: { fontSize: 11, marginLeft: 5, fontWeight: '900', letterSpacing: 0.5 },
-  content: { paddingHorizontal: 15, flex: 1, paddingBottom: 20 },
+userName: { 
+    fontSize: 22, 
+    fontFamily: TYPOGRAPHY.primary.bold, // 👈 Nombre destacado
+    textAlign: 'center',
+    color: '#1A1A1A' 
+  },  facultyBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 6 },
+facultyText: { 
+    fontSize: 11, 
+    marginLeft: 5, 
+    fontFamily: TYPOGRAPHY.primary.bold, // 👈 Badge de facultad
+    letterSpacing: 0.5 
+  },  content: { paddingHorizontal: 15, flex: 1, paddingBottom: 20 },
   
   menuCard: { borderRadius: 18, paddingHorizontal: 12, paddingVertical: 5, elevation: 2, overflow: 'hidden' },
   divider: { height: 1, width: '100%', opacity: 0.5 },
   menuItemSpace: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
   row: { flexDirection: 'row', alignItems: 'center' },
   iconCircle: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuText: { marginLeft: 12, fontSize: 15, fontWeight: '700' },
-
+menuText: { 
+    marginLeft: 12, 
+    fontSize: 15, 
+    fontFamily: TYPOGRAPHY.primary.semiBold // 👈 Items de menú
+  },
   // Estilos de la expansión
   avatarSelectionRow: { 
     flexDirection: 'row', 
@@ -245,10 +262,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden', borderWidth: 1, borderColor: '#DDD' 
   },
   smallAvatarImg: { width: '100%', height: '100%', resizeMode: 'cover' },
-  smallAvatarLabel: { fontSize: 10, fontWeight: '700', marginTop: 5 },
-
+smallAvatarLabel: { 
+    fontSize: 10, 
+    fontFamily: TYPOGRAPHY.primary.bold, // 👈 Etiquetas de cambio de avatar
+    marginTop: 5 
+  },
   logoutButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 15, marginTop: 'auto' },
-  logoutText: { marginLeft: 12, fontSize: 15, color: '#FF5252', fontWeight: '900' },
-  footer: { paddingBottom: 15, alignItems: 'center' },
-  versionText: { fontSize: 10, opacity: 0.5, fontWeight: '900' }
-});
+logoutText: { 
+    marginLeft: 12, 
+    fontSize: 15, 
+    color: '#FF5252', 
+    fontFamily: TYPOGRAPHY.primary.bold // 👈 Botón de peligro
+  },  footer: { paddingBottom: 15, alignItems: 'center' },
+versionText: { 
+    fontSize: 10, 
+    opacity: 0.5, 
+    fontFamily: TYPOGRAPHY.primary.bold // 👈 Footer
+  }});

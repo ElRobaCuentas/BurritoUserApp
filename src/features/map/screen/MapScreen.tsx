@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useBurritoStore } from '../../../store/burritoLocationStore';
 import { useThemeStore } from '../../../store/themeStore';
 import { useMapStore } from '../../../store/mapStore'; 
@@ -10,21 +10,35 @@ import { CustomDrawer } from '../components/CustomDrawer';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../../shared/theme/colors';
 
-// Animaciones para el Velo
-import Animated, { FadeOut, FadeIn, withRepeat, withSequence, withTiming, useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { FadeOut, withRepeat, withSequence, withTiming, useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient'; 
 import LottieView from 'lottie-react-native'; 
-
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+import { TYPOGRAPHY } from '../../../shared/theme/typography';
 
 export const MapScreen = () => {
   const { location, isBusOnline, actions } = useBurritoStore();
   const { isDarkMode } = useThemeStore();
   const { isFollowing, setCommand } = useMapStore(); 
   const { openDrawer } = useDrawerStore();
+  
   const [minTimeReached, setMinTimeReached] = useState(false);
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
-  // Animación del texto
+  useEffect(() => {
+    actions.startTracking();
+    const timer = setTimeout(() => setMinTimeReached(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // REGLA: Velo desaparece permanentemente en cuanto detecta al bus 1 vez
+  useEffect(() => {
+    if (isBusOnline && minTimeReached) {
+      setHasInitialLoad(true);
+    }
+  }, [isBusOnline, minTimeReached]);
+
+  const showLoading = !hasInitialLoad;
+
   const opacityText = useSharedValue(0.6);
   useEffect(() => {
     opacityText.value = withRepeat(
@@ -34,28 +48,20 @@ export const MapScreen = () => {
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({ opacity: opacityText.value }));
 
-  useEffect(() => {
-    actions.startTracking();
-    const timer = setTimeout(() => setMinTimeReached(true), 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // REGLA: Mostrar velo si no hay bus online O si no pasó el tiempo mínimo
-  const showLoading = !minTimeReached || !isBusOnline;
-
   return (
     <View style={styles.container}>
-      {/* 1. Usamos absoluteFillObject para forzar al mapa a llenar la pantalla */}
       <View style={[styles.mapWrapper, StyleSheet.absoluteFillObject]}>
         <Map burritoLocation={location} isDarkMode={isDarkMode} />
       </View>
 
       <View style={styles.uiLayer} pointerEvents="box-none">
         <SafeAreaView style={styles.hamburgerContainer}>
-          <TouchableOpacity onPress={openDrawer} activeOpacity={0.7}>
-            <Icon name="menu" size={36} color={COLORS.primary} style={styles.iconShadow} />
+          {/* 🍔 BOTÓN DE MENÚ (Estilo FAB Blanco Circular) */}
+          <TouchableOpacity onPress={openDrawer} activeOpacity={0.8} style={styles.hamburgerButton}>
+            <Icon name="menu" size={28} color={COLORS.shadow} />
           </TouchableOpacity>
         </SafeAreaView>
+
         <FAB isFollowingBus={isFollowing} onFollowBus={() => setCommand('follow')} onCenterMap={() => setCommand('center')} />
       </View>
 
@@ -63,18 +69,10 @@ export const MapScreen = () => {
         <CustomDrawer />
       </View>
 
-      {/* 2. Añadimos pointerEvents="none" para asegurar que el velo no bloquee nada si se queda colgado */}
       {showLoading && (
-        <Animated.View 
-          exiting={FadeOut.duration(800)} 
-          style={styles.overAllVelo}
-          pointerEvents="none" 
-        >
+        <Animated.View exiting={FadeOut.duration(800)} style={styles.overAllVelo} pointerEvents="none">
           <LinearGradient colors={['#00AEEF', '#FFFFFF']} style={styles.loadingOverlay}>
-            <LottieView 
-              source={{ uri: 'https://assets1.lottiefiles.com/packages/lf20_698wixtv.json' }} 
-              autoPlay loop style={styles.lottieLoader} 
-            />
+            <LottieView source={{ uri: 'https://assets1.lottiefiles.com/packages/lf20_698wixtv.json' }} autoPlay loop style={styles.lottieLoader} />
             <Animated.Text style={[styles.loadingText, pulseStyle]}>Esperando al Burrito...</Animated.Text>
           </LinearGradient>
         </Animated.View>
@@ -84,18 +82,12 @@ export const MapScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // 3. Forzamos flex: 1 en el contenedor principal
-  container: { flex: 1, backgroundColor: '#FFFFFF' }, // Cambié a blanco para descartar que el fondo negro sea el container
-  mapWrapper: { zIndex: 1 },
-  uiLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
-  drawerWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 20 },
+  container: { flex: 1, backgroundColor: '#FFFFFF' }, mapWrapper: { zIndex: 1 }, uiLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 }, drawerWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 20 },
   hamburgerContainer: { position: 'absolute', top: 40, left: 20 },
-  iconShadow: { textShadowColor: 'rgba(255, 255, 255, 0.9)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
-  overAllVelo: {
-    ...StyleSheet.absoluteFillObject, // 4. Usamos absoluteFillObject en lugar de medidas fijas exageradas
-    zIndex: 9999, elevation: 100,
+  hamburgerButton: {
+    backgroundColor: 'white', width: 45, height: 45, borderRadius: 28, justifyContent: 'center', alignItems: 'center',
+    elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 5,
   },
-  loadingOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  lottieLoader: { width: 250, height: 250 },
-  loadingText: { marginTop: 20, fontSize: 22, color: '#FFF', fontWeight: '900' }
+  overAllVelo: { ...StyleSheet.absoluteFillObject, zIndex: 9999, elevation: 100 }, loadingOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' }, lottieLoader: { width: 250, height: 250 },
+  loadingText: { marginTop: 20, fontSize: 22, color: '#FFF', fontFamily: TYPOGRAPHY.primary.bold, letterSpacing: -0.5 }
 });

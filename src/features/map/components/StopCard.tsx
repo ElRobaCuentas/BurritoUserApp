@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../../shared/theme/colors';
+import { TYPOGRAPHY } from '../../../shared/theme/typography';
 
 interface Props {
   title: string;
@@ -42,15 +43,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 10,
     color: COLORS.primary,
-    fontWeight: '800',
+    fontFamily: TYPOGRAPHY.primary.bold, // 👈 Poppins Bold para la etiqueta
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     marginBottom: 2,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontFamily: TYPOGRAPHY.primary.semiBold, // 👈 Poppins SemiBold para el nombre
     color: '#2C3E50',
+    letterSpacing: -0.3,
   },
   closeBtn: { marginLeft: 10 }
 });
