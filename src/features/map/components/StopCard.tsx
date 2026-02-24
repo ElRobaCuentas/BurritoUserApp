@@ -12,12 +12,12 @@ export const StopCard = ({ title, onClose }: Props) => {
   return (
     <View style={styles.cardContainer}>
       <View style={styles.content}>
-        <Text style={styles.label}>Paradero</Text>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.label}>Paradero UNMSM</Text>
+        <Text style={styles.title} numberOfLines={2}>{title}</Text>
       </View>
       
-      <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-        <Icon name="close-circle" size={22} color="#999" />
+      <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+        <Icon name="close-circle" size={24} color="#999" />
       </TouchableOpacity>
     </View>
   );
@@ -26,29 +26,31 @@ export const StopCard = ({ title, onClose }: Props) => {
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: 16,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    width: 180, // Tamaño compacto flotante
-    elevation: 5,
+    width: 220, 
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    marginBottom: 10, // Separación del marcador
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
   content: { flex: 1 },
   label: {
     fontSize: 10,
     color: COLORS.primary,
-    fontWeight: 'bold',
+    fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2C3E50',
   },
-  closeBtn: { marginLeft: 8 }
+  closeBtn: { marginLeft: 10 }
 });
