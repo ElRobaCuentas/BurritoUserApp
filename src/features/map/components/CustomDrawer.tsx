@@ -1,18 +1,22 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  View, Text, StyleSheet, TouchableOpacity, Image, 
+  Switch, Dimensions, TouchableWithoutFeedback 
+} from 'react-native';
 import { useDrawerStore } from '../../../store/drawerStore';
 import { useUserStore, AvatarId } from '../../../store/userStore';
 import { useThemeStore } from '../../../store/themeStore'; 
 import { COLORS } from '../../../shared/theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
-// ✅ Importamos lo necesario para la animación
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withSpring, 
-  withTiming, 
-  interpolate 
+  withTiming,
+  FadeIn,
+  FadeOut,
+  Layout // Para animar el crecimiento de la tarjeta
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -25,45 +29,42 @@ const AVATAR_IMAGES: Record<AvatarId, any> = {
   salud: require('../../../assets/SALUD.png'),
 };
 
+const AVATAR_LIST: { id: AvatarId; label: string }[] = [
+  { id: 'ingeniero', label: 'Ing.' },
+  { id: 'salud', label: 'Salud' },
+  { id: 'economista', label: 'Econ.' },
+  { id: 'humanidades', label: 'Hum.' },
+];
+
 export const CustomDrawer = () => {
   const { isOpen, closeDrawer } = useDrawerStore() as any;
-  const { username, avatar, logout } = useUserStore();
+  const { username, avatar, setAvatar, logout } = useUserStore();
   const { isDarkMode, toggleTheme } = useThemeStore() as any; 
 
-  // 1️⃣ VALORES ANIMADOS
+  // Estado para controlar la expansión del selector
+  const [isExpanding, setIsExpanding] = useState(false);
+
   const translateX = useSharedValue(-DRAWER_WIDTH - 50); 
   const backdropOpacity = useSharedValue(0);
 
-  // 2️⃣ ESCUCHA EL CAMBIO DE ISOPEN
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen) {
-      translateX.value = withSpring(0, { 
-        damping: 20, 
-        stiffness: 150, 
-        overshootClamping: true 
-      });
+      translateX.value = withSpring(0, { damping: 20, stiffness: 150, overshootClamping: true });
       backdropOpacity.value = withTiming(1, { duration: 300 });
     } else {
-      // 2️⃣ Al cerrar, lo mandamos un poco más lejos del borde
-      translateX.value = withSpring(-DRAWER_WIDTH - 50, { 
-        damping: 20, 
-        stiffness: 150 
-      });
+      translateX.value = withSpring(-DRAWER_WIDTH - 50, { damping: 20, stiffness: 150 });
       backdropOpacity.value = withTiming(0, { duration: 300 });
+      setIsExpanding(false); // Cerramos el acordeón si se cierra el drawer
     }
   }, [isOpen]);
 
-  // 3️⃣ ESTILOS ANIMADOS
   const animatedDrawerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
-    // 3️⃣ Si el drawer está cerrado, bajamos la opacidad a 0 para que el motor gráfico no lo renderice
     opacity: translateX.value <= -DRAWER_WIDTH ? 0 : 1,
   }));
 
   const animatedBackdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,
-    // Evita que el backdrop bloquee toques cuando está invisible
-    display: backdropOpacity.value === 0 && !isOpen ? 'none' : 'flex',
   }));
 
   const theme = {
@@ -74,33 +75,24 @@ export const CustomDrawer = () => {
     headerGradient: isDarkMode ? ['#0F172A', '#1E293B'] : [COLORS.primary, '#00AEEF']
   };
 
+  // 🔥 LÓGICA SENIOR: Filtrar el avatar actual para mostrar solo los 3 disponibles
+  const availableAvatars = AVATAR_LIST.filter(item => item.id !== avatar);
+
   return (
     <View style={styles.overlay} pointerEvents="box-none">
       
-      {/* FONDO OSCURO ANIMADO */}
       <TouchableWithoutFeedback onPress={closeDrawer}>
-        <Animated.View style={[styles.backdrop, animatedBackdropStyle]} />
+        <Animated.View style={[styles.backdrop, animatedBackdropStyle, { display: isOpen ? 'flex' : 'none' }]} />
       </TouchableWithoutFeedback>
       
-      {/* CONTENEDOR DEL DRAWER ANIMADO */}
-     <Animated.View 
-        style={[
-          styles.drawerContainer, 
-          { backgroundColor: theme.bg }, 
-          animatedDrawerStyle
-        ]}
-        pointerEvents={isOpen ? 'auto' : 'none'}
-      >
+      <Animated.View style={[styles.drawerContainer, { backgroundColor: theme.bg }, animatedDrawerStyle]}>
         
         <LinearGradient colors={theme.headerGradient} style={styles.header}>
             <Text style={styles.brandText}>BURRITO UNMSM</Text>
         </LinearGradient>
 
         <View style={styles.avatarWrapper}>
-            <View style={[
-              styles.avatarContainer, 
-              { borderColor: theme.bg, backgroundColor: theme.card }
-            ]}>
+            <View style={[styles.avatarContainer, { borderColor: theme.bg, backgroundColor: theme.card }]}>
                 {avatar && AVATAR_IMAGES[avatar] ? (
                     <Image source={AVATAR_IMAGES[avatar]} style={styles.avatarImage} />
                 ) : (
@@ -120,7 +112,12 @@ export const CustomDrawer = () => {
         </View>
 
         <View style={styles.content}>
-          <View style={[styles.menuCard, { backgroundColor: theme.card }]}>
+          {/* TARJETA CONFIGURABLE (MODO OSCURO + CAMBIAR AVATAR) */}
+          <Animated.View 
+            layout={Layout.springify()} // 🪄 Magia: anima el crecimiento automáticamente
+            style={[styles.menuCard, { backgroundColor: theme.card }]}
+          >
+            {/* ITEM MODO OSCURO */}
             <View style={styles.menuItemSpace}>
               <View style={styles.row}>
                 <View style={[styles.iconCircle, { backgroundColor: COLORS.primary + '15' }]}>
@@ -135,8 +132,54 @@ export const CustomDrawer = () => {
                 thumbColor={isDarkMode ? COLORS.primary : "#f4f3f4"}
               />
             </View>
-          </View>
 
+            <View style={[styles.divider, { backgroundColor: isDarkMode ? '#333' : '#EEE' }]} />
+
+            {/* ITEM CAMBIAR AVATAR */}
+            <TouchableOpacity 
+              style={styles.menuItemSpace} 
+              onPress={() => setIsExpanding(!isExpanding)}
+            >
+              <View style={styles.row}>
+                <View style={[styles.iconCircle, { backgroundColor: COLORS.primary + '15' }]}>
+                  <Icon name="account-edit-outline" size={20} color={COLORS.primary} />
+                </View>
+                <Text style={[styles.menuText, { color: theme.text }]}>Cambiar Avatar</Text>
+              </View>
+              <Icon 
+                name={isExpanding ? "chevron-up" : "chevron-down"} 
+                size={22} 
+                color={COLORS.primary} 
+              />
+            </TouchableOpacity>
+
+            {/* SECCIÓN EXPANDIBLE (LOS 3 AVATARES RESTANTES) */}
+            {isExpanding && (
+              <Animated.View 
+                entering={FadeIn.duration(300)} 
+                exiting={FadeOut.duration(200)}
+                style={styles.avatarSelectionRow}
+              >
+                {availableAvatars.map((item) => (
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={styles.avatarOption}
+                    onPress={() => {
+                      setAvatar(item.id);
+                      setIsExpanding(false);
+                    }}
+                  >
+                    <View style={styles.smallAvatarCircle}>
+                      <Image source={AVATAR_IMAGES[item.id]} style={styles.smallAvatarImg} />
+                    </View>
+                    <Text style={[styles.smallAvatarLabel, { color: theme.subText }]}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </Animated.View>
+            )}
+          </Animated.View>
+
+          {/* BOTÓN CERRAR SESIÓN */}
           <TouchableOpacity 
             style={[styles.logoutButton, { backgroundColor: isDarkMode ? 'rgba(255,82,82,0.05)' : '#FFF5F5' }]} 
             onPress={() => { logout(); closeDrawer(); }}
@@ -151,7 +194,7 @@ export const CustomDrawer = () => {
         </View>
         
         <View style={styles.footer}>
-          <Text style={[styles.versionText, { color: theme.subText }]}>v.1.0</Text>
+          <Text style={[styles.versionText, { color: theme.subText }]}>UNMSM - 2024</Text>
         </View>
       </Animated.View>
     </View>
@@ -162,16 +205,9 @@ const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, zIndex: 9999 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   drawerContainer: { 
-    width: DRAWER_WIDTH, 
-    height: '100%', 
-    elevation: 25,
-    borderTopRightRadius: 25,
-    borderBottomRightRadius: 25,
-    overflow: 'hidden',
-    position: 'absolute',
-    left: 0, 
-    top: 0,
-    bottom: 0,
+    width: DRAWER_WIDTH, height: '100%', elevation: 25, 
+    borderTopRightRadius: 25, borderBottomRightRadius: 25, 
+    overflow: 'hidden', position: 'absolute', left: 0, top: 0, bottom: 0,
   },
   header: { height: 160, paddingTop: 40, alignItems: 'center' },
   brandText: { color: 'white', fontSize: 14, fontWeight: '900', opacity: 0.9, letterSpacing: 2 },
@@ -186,11 +222,31 @@ const styles = StyleSheet.create({
   facultyBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 6 },
   facultyText: { fontSize: 11, marginLeft: 5, fontWeight: '900', letterSpacing: 0.5 },
   content: { paddingHorizontal: 15, flex: 1, paddingBottom: 20 },
-  menuCard: { borderRadius: 18, paddingHorizontal: 12, paddingVertical: 5, elevation: 2 },
+  
+  menuCard: { borderRadius: 18, paddingHorizontal: 12, paddingVertical: 5, elevation: 2, overflow: 'hidden' },
+  divider: { height: 1, width: '100%', opacity: 0.5 },
   menuItemSpace: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
   row: { flexDirection: 'row', alignItems: 'center' },
   iconCircle: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   menuText: { marginLeft: 12, fontSize: 15, fontWeight: '700' },
+
+  // Estilos de la expansión
+  avatarSelectionRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingVertical: 15, 
+    paddingHorizontal: 5,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)'
+  },
+  avatarOption: { alignItems: 'center', width: '30%' },
+  smallAvatarCircle: { 
+    width: 50, height: 50, borderRadius: 25, backgroundColor: '#F0F0F0', 
+    overflow: 'hidden', borderWidth: 1, borderColor: '#DDD' 
+  },
+  smallAvatarImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  smallAvatarLabel: { fontSize: 10, fontWeight: '700', marginTop: 5 },
+
   logoutButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 15, marginTop: 'auto' },
   logoutText: { marginLeft: 12, fontSize: 15, color: '#FF5252', fontWeight: '900' },
   footer: { paddingBottom: 15, alignItems: 'center' },
