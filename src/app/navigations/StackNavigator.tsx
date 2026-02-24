@@ -18,7 +18,7 @@ export type RootStackParams = {
 const Stack = createStackNavigator<RootStackParams>();
 
 export const StackNavigator = () => {
-  const hasProfile = useUserStore((state) => state.hasProfile);
+  const isLoggedIn = useUserStore((state) => state.isLoggedIn);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export const StackNavigator = () => {
       // 🛠️ MODO DESARROLLO: 
       // Forzamos 'LoginScreen' para que puedas pulir el diseño.
       // Cuando termines, cámbialo a: {hasProfile ? 'MainApp' : 'LoginScreen'}
-      initialRouteName={'LoginScreen'} 
+      initialRouteName={isLoggedIn ? 'MainApp' : 'LoginScreen'} 
       screenOptions={{ headerShown: false }}
     >
       {/* IMPORTANTE: Ponemos las pantallas fuera de condicionales 

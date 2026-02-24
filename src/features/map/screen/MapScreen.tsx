@@ -45,7 +45,8 @@ export const MapScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mapWrapper}>
+      {/* 1. Usamos absoluteFillObject para forzar al mapa a llenar la pantalla */}
+      <View style={[styles.mapWrapper, StyleSheet.absoluteFillObject]}>
         <Map burritoLocation={location} isDarkMode={isDarkMode} />
       </View>
 
@@ -62,9 +63,13 @@ export const MapScreen = () => {
         <CustomDrawer />
       </View>
 
-      {/* 🚢 EL VELO SUPREMO: Tapa hamburguesa y botones */}
+      {/* 2. Añadimos pointerEvents="none" para asegurar que el velo no bloquee nada si se queda colgado */}
       {showLoading && (
-        <Animated.View exiting={FadeOut.duration(800)} style={styles.overAllVelo}>
+        <Animated.View 
+          exiting={FadeOut.duration(800)} 
+          style={styles.overAllVelo}
+          pointerEvents="none" 
+        >
           <LinearGradient colors={['#00AEEF', '#FFFFFF']} style={styles.loadingOverlay}>
             <LottieView 
               source={{ uri: 'https://assets1.lottiefiles.com/packages/lf20_698wixtv.json' }} 
@@ -79,16 +84,15 @@ export const MapScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  mapWrapper: { flex: 1, zIndex: 1 },
+  // 3. Forzamos flex: 1 en el contenedor principal
+  container: { flex: 1, backgroundColor: '#FFFFFF' }, // Cambié a blanco para descartar que el fondo negro sea el container
+  mapWrapper: { zIndex: 1 },
   uiLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
   drawerWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 20 },
   hamburgerContainer: { position: 'absolute', top: 40, left: 20 },
   iconShadow: { textShadowColor: 'rgba(255, 255, 255, 0.9)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   overAllVelo: {
-    position: 'absolute',
-    top: -100, left: -100,
-    width: SCREEN_WIDTH + 200, height: SCREEN_HEIGHT + 200,
+    ...StyleSheet.absoluteFillObject, // 4. Usamos absoluteFillObject en lugar de medidas fijas exageradas
     zIndex: 9999, elevation: 100,
   },
   loadingOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },

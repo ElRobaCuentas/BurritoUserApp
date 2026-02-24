@@ -7,7 +7,7 @@ import { StopCard } from './StopCard';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
 
-Mapbox.setAccessToken('tu_token_aqui'); 
+Mapbox.setAccessToken('pk.eyJ1IjoiZWxyb2JhY3VlbnRhcyIsImEiOiJjbWx4MDc1Y2gwanpoM2txMzd1Mzl6YjN6In0.9c9y92FLxw_MeIZaX4EdPQ'); 
 
 const UNMSM_STATIC_VIEW = { center: [-77.0830, -12.0575] as [number, number], zoom: 15.2 };
 const UNMSM_BOUNDS = { ne: [-77.0720, -12.0450] as [number, number], sw: [-77.0980, -12.0700] as [number, number] };

@@ -2,34 +2,34 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, TextInput, 
   Dimensions, Platform, Keyboard, TouchableWithoutFeedback, 
-  KeyboardAvoidingView 
+  KeyboardAvoidingView, Image 
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { 
   useSharedValue, useAnimatedStyle, withSpring, withTiming, 
   FadeIn, runOnJS, withRepeat, withSequence 
 } from 'react-native-reanimated';
-import LottieView from 'lottie-react-native';
-import { useUserStore } from '../../../store/userStore';
+import { useUserStore, AvatarId } from '../../../store/userStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParams } from '../../../app/navigations/StackNavigator';
 
 const { height } = Dimensions.get('window');
 
-// 🎭 CONFIGURACIÓN DE AVATARES LOTTIE
+// 🎭 CONFIGURACIÓN DE TUS AVATARES DE IMAGEN (AÑADIMOS "label")
 const AVATARES = [
-  { id: 'av1', url: 'https://assets9.lottiefiles.com/packages/lf20_syas8p96.json', color: '#FFBD59' }, // Perro
-  { id: 'av2', url: 'https://assets1.lottiefiles.com/packages/lf20_K7a9Dz.json', color: '#FF5757' },    // Bus
-  { id: 'av3', url: 'https://assets5.lottiefiles.com/packages/lf20_m6cu96.json', color: '#8C52FF' },   // Estudiante
-  { id: 'av4', url: 'https://assets3.lottiefiles.com/private_files/lf30_8ez6yv6t.json', color: '#5CE1E6' }, // Libro
+  { id: 'economista', label: 'Economia', url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' }, 
+  { id: 'ingeniero', label: 'Ingenieria', url: require('../../../assets/INGENIERO.png'), color: '#FF5757' },    
+  { id: 'salud', label: 'Salud', url: require('../../../assets/SALUD.png'), color: '#8C52FF' },   
+  { id: 'humanidades', label: 'Humanidades', url: require('../../../assets/HUMANIDADES.png'), color: '#5CE1E6' }, 
 ];
 
 export const LoginScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParams>>();  
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const setProfile = useUserStore((state) => state.setProfile);
+  
+  const { setUsername, setAvatar, login } = useUserStore();
 
   const sheetY = useSharedValue(height);
   const backdropOpacity = useSharedValue(0);
@@ -73,13 +73,14 @@ export const LoginScreen = () => {
       backdropOpacity.value = withTiming(0, { duration: 250 });
       sheetY.value = withTiming(height, { duration: 250 });
 
-      // Transición directa al mapa (el mapa ya tiene su propio velo de carga)
       setTimeout(() => {
-        setProfile(name.trim(), selectedId);
+        setUsername(name.trim());
+        setAvatar(selectedId as AvatarId);
+        login();
         navigation.replace('MainApp');
       }, 300); 
     }
-  }, [name, selectedId, navigation, setProfile]);
+  }, [name, selectedId, navigation, setUsername, setAvatar, login]);
 
   const breathingStyle = useAnimatedStyle(() => ({
     transform: [{ scale: breathing.value }],
@@ -98,17 +99,20 @@ export const LoginScreen = () => {
         <View style={styles.avatarGrid}>
           {AVATARES.map((item) => (
             <Animated.View key={item.id} style={[styles.circleWrapper, breathingStyle]}>
+              {/* ✅ El TouchableOpacity ahora envuelve al círculo Y al texto */}
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => openSheet(item.id)}
-                style={[styles.circle, { backgroundColor: item.color + '20' }]}
+                style={{ alignItems: 'center' }}
               >
-                <LottieView 
-                  source={{ uri: item.url }} 
-                  autoPlay 
-                  loop 
-                  style={styles.lottieAvatar} 
-                />
+                <View style={[styles.circle, { backgroundColor: item.color + '20' }]}>
+                  <Image 
+                    source={item.url} 
+                    style={styles.imageAvatar} 
+                  />
+                </View>
+                {/* ✅ Aquí está el nuevo título debajo de la imagen */}
+                <Text style={styles.avatarLabel}>{item.label}</Text>
               </TouchableOpacity>
             </Animated.View>
           ))}
@@ -128,11 +132,9 @@ export const LoginScreen = () => {
           {selectedAvatar && (
             <Animated.View entering={FadeIn} style={styles.heroAvatarContainer}>
                <View style={[styles.heroCircle, { backgroundColor: selectedAvatar.color + '40' }]}>
-                  <LottieView 
-                    source={{ uri: selectedAvatar.url }} 
-                    autoPlay 
-                    loop 
-                    style={styles.lottieHero} 
+                  <Image 
+                    source={selectedAvatar.url} 
+                    style={styles.imageHero} 
                   />
                </View>
             </Animated.View>
@@ -171,10 +173,26 @@ const styles = StyleSheet.create({
   header: { marginTop: 80, alignItems: 'center' },
   mainTitle: { fontSize: 34, fontWeight: '900', color: '#FFF' },
   avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 30, marginTop: 60 },
-  circleWrapper: { width: 100, height: 100 },
-  circle: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)', overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
-  lottieAvatar: { width: 80, height: 80 },
   
+  // ✅ CORRECCIÓN: Le quitamos la altura fija al wrapper para que el texto no se corte
+  circleWrapper: { width: 110, alignItems: 'center' }, 
+  
+  circle: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)', overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
+  imageAvatar: { width: '100%', height: '100%', resizeMode: 'cover' },
+  
+  // ✅ ESTILO NUEVO PARA LOS TÍTULOS DE LAS FACULTADES
+  avatarLabel: {
+    marginTop: 10,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.15)', // Una sombra suave para que resalte
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    letterSpacing: 0.5,
+  },
+
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 10 },
   bottomSheet: {
     position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#FFF', 
@@ -186,7 +204,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF', borderRadius: 70, elevation: 15, zIndex: 30
   },
   heroCircle: { width: 110, height: 110, borderRadius: 55, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
-  lottieHero: { width: 100, height: 100 },
+  imageHero: { width: '100%', height: '100%', resizeMode: 'cover' },
   
   sheetHandle: { width: 40, height: 5, backgroundColor: '#EEE', borderRadius: 3, marginTop: 10, marginBottom: 60 },
   sheetTitle: { fontSize: 24, fontWeight: '800', color: '#333', marginBottom: 20 },
