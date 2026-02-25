@@ -30,7 +30,6 @@ export const MapScreen = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // REGLA: Velo desaparece permanentemente en cuanto detecta al bus 1 vez
   useEffect(() => {
     if (isBusOnline && minTimeReached) {
       setHasInitialLoad(true);
@@ -56,7 +55,6 @@ export const MapScreen = () => {
 
       <View style={styles.uiLayer} pointerEvents="box-none">
         <SafeAreaView style={styles.hamburgerContainer}>
-          {/* 🍔 BOTÓN DE MENÚ (Estilo FAB Blanco Circular) */}
           <TouchableOpacity onPress={openDrawer} activeOpacity={0.8} style={styles.hamburgerButton}>
             <Icon name="menu" size={28} color={COLORS.shadow} />
           </TouchableOpacity>

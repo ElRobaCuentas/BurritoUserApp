@@ -248,7 +248,7 @@ export const CustomDrawer = () => {
                   <ActivityIndicator color="white" />
                 ) : (
                   <>
-                    <Text style={styles.sendBtnText}>Enviar al equipo</Text>
+                    <Text style={styles.sendBtnText}>Enviar</Text>
                     <Icon name="check-circle-outline" size={18} color="#FFF" style={{marginLeft: 8}}/>
                   </>
                 )}
