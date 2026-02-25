@@ -66,15 +66,6 @@ export const MapScreen = () => {
       <View style={styles.drawerWrapper} pointerEvents="box-none">
         <CustomDrawer />
       </View>
-
-      {showLoading && (
-        <Animated.View exiting={FadeOut.duration(800)} style={styles.overAllVelo} pointerEvents="none">
-          <LinearGradient colors={['#00AEEF', '#FFFFFF']} style={styles.loadingOverlay}>
-            <LottieView source={{ uri: 'https://assets1.lottiefiles.com/packages/lf20_698wixtv.json' }} autoPlay loop style={styles.lottieLoader} />
-            <Animated.Text style={[styles.loadingText, pulseStyle]}>Esperando al Burrito...</Animated.Text>
-          </LinearGradient>
-        </Animated.View>
-      )}
     </View>
   );
 };
