@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Hook de seguridad
 import { COLORS } from '../../../shared/theme/colors';
 
 interface FABProps {
@@ -10,8 +11,18 @@ interface FABProps {
 }
 
 export const FAB = ({ isFollowingBus, onFollowBus, onCenterMap }: FABProps) => {
+  const insets = useSafeAreaInsets(); // Detectamos el borde inferior real
+
   return (
-    <View style={styles.container}>
+    <View 
+      style={[
+        styles.container, 
+        { 
+          // Posición dinámica: Borde seguro + 20px de margen
+          bottom: Platform.OS === 'android' ? insets.bottom + 20 : insets.bottom + 10 
+        }
+      ]}
+    >
       
       {/* Botón de Centrado Panorámico */}
       <TouchableOpacity 
@@ -42,25 +53,26 @@ export const FAB = ({ isFollowingBus, onFollowBus, onCenterMap }: FABProps) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 40, 
-    right: 20,
+    right: 20, // Se mantiene a la derecha
     flexDirection: 'column',
+    alignItems: 'center',
   },
   button: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 52, // Un poquito más grande para mejor 'tappability'
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-    marginBottom: 15, 
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8, // Sombra más marcada para que resalte sobre el mapa
+    marginBottom: 12, 
   },
   buttonActive: {
     backgroundColor: COLORS.primary, 
+    elevation: 12, // Efecto de estar 'más arriba' cuando está activo
   }
 });

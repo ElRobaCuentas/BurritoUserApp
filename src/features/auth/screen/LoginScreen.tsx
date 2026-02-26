@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, TextInput, 
-  Dimensions, Platform, Keyboard, TouchableWithoutFeedback, 
-  KeyboardAvoidingView, Image 
+  Platform, Keyboard, TouchableWithoutFeedback, 
+  KeyboardAvoidingView, Image, Alert, useWindowDimensions, ScrollView 
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { 
@@ -14,8 +14,8 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParams } from '../../../app/navigations/StackNavigator';
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
-
-const { height, width } = Dimensions.get('window');
+import DeviceInfo from 'react-native-device-info';
+import database from '@react-native-firebase/database';
 
 const AVATARES = [
   { id: 'economista', label: 'ECONOMISTA', url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' }, 
@@ -26,14 +26,22 @@ const AVATARES = [
 
 export const LoginScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParams>>();  
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState('');
   
-  const { setUsername, setAvatar, login } = useUserStore();
+  const { setUsername, setAvatar, setUid, login } = useUserStore();
 
-  const sheetY = useSharedValue(height);
+  const sheetY = useSharedValue(screenHeight);
   const backdropOpacity = useSharedValue(0);
   const breathing = useSharedValue(1); 
+
+  // --- CÁLCULOS RESPONSIVOS ---
+  const horizontalPadding = 20;
+  const gap = 20;
+  // Calculamos el tamaño del avatar para que siempre quepan 2 por fila
+  const avatarWrapperWidth = (screenWidth - (horizontalPadding * 2) - gap) / 2;
+  const circleSize = avatarWrapperWidth * 0.85;
 
   useEffect(() => {
     breathing.value = withRepeat(
@@ -41,8 +49,7 @@ export const LoginScreen = () => {
         withTiming(1.03, { duration: 2000 }), 
         withTiming(1, { duration: 2000 })
       ),
-      -1, 
-      true 
+      -1, true 
     );
   }, []);
 
@@ -59,27 +66,42 @@ export const LoginScreen = () => {
   const closeSheet = useCallback(() => {
     Keyboard.dismiss();
     backdropOpacity.value = withTiming(0, { duration: 300 });
-    sheetY.value = withTiming(height, { duration: 300 }, (finished) => {
+    sheetY.value = withTiming(screenHeight, { duration: 300 }, (finished) => {
       if (finished) {
         runOnJS(setSelectedId)(null);
       }
     });
   }, []);
 
-  const handleFinish = useCallback(() => {
+  const handleFinish = useCallback(async () => {
     if (name.trim().length > 2 && selectedId) {
-      Keyboard.dismiss();
-      backdropOpacity.value = withTiming(0, { duration: 250 });
-      sheetY.value = withTiming(height, { duration: 250 });
+      try {
+        Keyboard.dismiss();
+        const uniqueId = await DeviceInfo.getUniqueId();
+        
+        await database().ref(`/usuarios/${uniqueId}`).set({
+          nombre: name.trim(),
+          avatar: selectedId,
+          dispositivo: await DeviceInfo.getModel(),
+          ultimaConexion: new Date().toISOString()
+        });
 
-      setTimeout(() => {
-        setUsername(name.trim());
-        setAvatar(selectedId as AvatarId);
-        login();
-        navigation.replace('MainApp');
-      }, 300); 
+        backdropOpacity.value = withTiming(0, { duration: 250 });
+        sheetY.value = withTiming(screenHeight, { duration: 250 });
+
+        setTimeout(() => {
+          setUid(uniqueId);
+          setUsername(name.trim());
+          setAvatar(selectedId as AvatarId);
+          login();
+          navigation.replace('MainApp');
+        }, 300); 
+
+      } catch (error) {
+        Alert.alert("Error", "No pudimos conectar con la base de datos.");
+      }
     }
-  }, [name, selectedId, navigation, setUsername, setAvatar, login]);
+  }, [name, selectedId, navigation, setUsername, setAvatar, setUid, login, screenHeight]);
 
   const breathingStyle = useAnimatedStyle(() => ({
     transform: [{ scale: breathing.value }],
@@ -91,29 +113,47 @@ export const LoginScreen = () => {
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#00AEEF', '#FFFFFF']} style={styles.backgroundLayer}>
-        
-        <View style={styles.header}>
-          <Text style={styles.mainTitle}>ELIGE TU AVATAR</Text>
-        </View>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={[
+              styles.mainTitle, 
+              screenWidth < 380 && { fontSize: 32, lineHeight: 38 }
+            ]}>
+              ELIGE TU AVATAR
+            </Text>
+          </View>
 
-        <View style={styles.avatarGrid}>
-          {AVATARES.map((item) => (
-            <Animated.View key={item.id} style={[styles.circleWrapper, breathingStyle]}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => openSheet(item.id)}
-                style={styles.avatarButton}
-              >
-                <View style={[styles.circle, { backgroundColor: item.color + '25' }]}>
-                  <Image source={item.url} style={styles.imageAvatar} />
-                </View>
-                <Text style={styles.avatarLabel}>{item.label}</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          ))}
-        </View>
+          <View style={[styles.avatarGrid, { gap: gap }]}>
+            {AVATARES.map((item) => (
+              <Animated.View key={item.id} style={[{ width: avatarWrapperWidth }, breathingStyle]}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => openSheet(item.id)}
+                  style={styles.avatarButton}
+                >
+                  <View style={[
+                    styles.circle, 
+                    { 
+                      width: circleSize, 
+                      height: circleSize, 
+                      borderRadius: circleSize / 2,
+                      backgroundColor: item.color + '25' 
+                    }
+                  ]}>
+                    <Image source={item.url} style={styles.imageAvatar} />
+                  </View>
+                  <Text style={styles.avatarLabel}>{item.label}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            ))}
+          </View>
+        </ScrollView>
       </LinearGradient>
 
+      {/* BACKDROP Y BOTTOM SHEET */}
       <Animated.View style={[styles.backdrop, backdropStyle]} pointerEvents={selectedId ? 'auto' : 'none'}>
         <TouchableWithoutFeedback onPress={closeSheet}>
           <View style={StyleSheet.absoluteFill} />
@@ -129,10 +169,8 @@ export const LoginScreen = () => {
                </View>
             </Animated.View>
           )}
-
           <View style={styles.sheetHandle} />
           <Text style={styles.sheetTitle}>¿Cómo te llamas?</Text>
-          
           <TextInput
             style={styles.input}
             placeholder="Tu nombre aquí..."
@@ -140,10 +178,8 @@ export const LoginScreen = () => {
             onChangeText={setName}
             value={name}
             maxLength={15}
-            returnKeyType="done"
             onSubmitEditing={handleFinish}
           />
-          
           <TouchableOpacity 
             style={[styles.btnStart, name.trim().length <= 2 && styles.btnDisabled]} 
             onPress={handleFinish}
@@ -159,53 +195,50 @@ export const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#00AEEF' },
-  backgroundLayer: { flex: 1, paddingHorizontal: 20, justifyContent: 'center' }, 
-  header: { marginBottom: 60, alignItems: 'center' },
+  backgroundLayer: { flex: 1 },
+  scrollContent: { 
+    flexGrow: 1, 
+    paddingHorizontal: 20, 
+    justifyContent: 'center',
+    paddingVertical: 50 
+  },
+  header: { marginBottom: 40, alignItems: 'center' },
   mainTitle: { 
     fontSize: 42, 
     fontFamily: TYPOGRAPHY.primary.bold, 
     color: '#FFF', 
     textAlign: 'center',
-    letterSpacing: -1.5, // Hace que el título se vea más compacto y moderno
+    letterSpacing: -1.5,
     lineHeight: 50,
   },
   avatarGrid: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    justifyContent: 'space-evenly', 
+    justifyContent: 'center', 
     alignItems: 'center',
-    gap: 35 
   },
-  circleWrapper: { width: 150, alignItems: 'center' }, 
   avatarButton: { alignItems: 'center' },
   circle: { 
-    width: 140, 
-    height: 140, 
-    borderRadius: 70, 
     borderWidth: 4, 
     borderColor: 'rgba(255,255,255,0.7)', 
     overflow: 'hidden', 
     justifyContent: 'center', 
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    elevation: 10, // Sombra para Android
-    shadowColor: '#000', // Sombra para iOS
+    elevation: 10,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
   },
   imageAvatar: { width: '100%', height: '100%', resizeMode: 'cover' },
   avatarLabel: {
-    marginTop: 15,
-    fontSize: 14,
-    fontFamily: TYPOGRAPHY.primary.semiBold, // Usamos SemiBold para etiquetas
+    marginTop: 12,
+    fontSize: 13,
+    fontFamily: TYPOGRAPHY.primary.semiBold,
     color: '#FFFFFF',
     textAlign: 'center',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 10 },
   bottomSheet: {
@@ -219,39 +252,14 @@ const styles = StyleSheet.create({
   },
   heroCircle: { width: 130, height: 130, borderRadius: 65, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
   imageHero: { width: '100%', height: '100%', resizeMode: 'cover' },
-  sheetHandle: { width: 50, height: 5, backgroundColor: '#E0E0E0', borderRadius: 10, marginTop: 15, marginBottom: 60 },
-  sheetTitle: { 
-    fontSize: 26, 
-    fontFamily: TYPOGRAPHY.primary.bold, 
-    color: '#1A1A1A', 
-    marginBottom: 25 
-  },
+  sheetHandle: { width: 50, height: 5, backgroundColor: '#E0E0E0', borderRadius: 10, marginTop: 15, marginBottom: 50 },
+  sheetTitle: { fontSize: 24, fontFamily: TYPOGRAPHY.primary.bold, color: '#1A1A1A', marginBottom: 20 },
   input: { 
-    width: '100%', 
-    backgroundColor: '#F8F9FA', 
-    borderRadius: 20, 
-    padding: 18, 
-    fontSize: 20, 
-    fontFamily: TYPOGRAPHY.primary.medium, // Input más legible
-    color: '#333', 
-    textAlign: 'center', 
-    marginBottom: 25, 
-    borderWidth: 1.5, 
-    borderColor: '#F0F0F0' 
+    width: '100%', backgroundColor: '#F8F9FA', borderRadius: 20, 
+    padding: 18, fontSize: 18, fontFamily: TYPOGRAPHY.primary.medium,
+    color: '#333', textAlign: 'center', marginBottom: 20, borderWidth: 1.5, borderColor: '#F0F0F0' 
   },
-  btnStart: { 
-    backgroundColor: '#00AEEF', 
-    width: '100%', 
-    paddingVertical: 18, 
-    borderRadius: 20, 
-    alignItems: 'center', 
-    elevation: 4 
-  },
+  btnStart: { backgroundColor: '#00AEEF', width: '100%', paddingVertical: 18, borderRadius: 20, alignItems: 'center', elevation: 4 },
   btnDisabled: { backgroundColor: '#D0D0D0' },
-  btnText: { 
-    color: '#FFF', 
-    fontFamily: TYPOGRAPHY.primary.bold, 
-    fontSize: 18, 
-    letterSpacing: 1.5 
-  },
+  btnText: { color: '#FFF', fontFamily: TYPOGRAPHY.primary.bold, fontSize: 18, letterSpacing: 1.5 },
 });

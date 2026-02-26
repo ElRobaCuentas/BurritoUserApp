@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, SafeAreaView } from 'react-native';
+import { 
+  StyleSheet, 
+  View, 
+  TouchableOpacity, 
+  StatusBar, 
+  Platform 
+} from 'react-native';
+// Hook esencial para el diseño extraordinario
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBurritoStore } from '../../../store/burritoLocationStore';
 import { useThemeStore } from '../../../store/themeStore';
 import { useMapStore } from '../../../store/mapStore'; 
@@ -10,17 +18,15 @@ import { CustomDrawer } from '../components/CustomDrawer';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../../shared/theme/colors';
 
-import Animated, { FadeOut, withRepeat, withSequence, withTiming, useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient'; 
-import LottieView from 'lottie-react-native'; 
-import { TYPOGRAPHY } from '../../../shared/theme/typography';
-
 export const MapScreen = () => {
   const { location, isBusOnline, actions } = useBurritoStore();
   const { isDarkMode } = useThemeStore();
   const { isFollowing, setCommand } = useMapStore(); 
   const { openDrawer } = useDrawerStore();
   
+  // Extraemos los márgenes de seguridad dinámicos
+  const insets = useSafeAreaInsets();
+
   const [minTimeReached, setMinTimeReached] = useState(false);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
@@ -36,33 +42,55 @@ export const MapScreen = () => {
     }
   }, [isBusOnline, minTimeReached]);
 
-  const showLoading = !hasInitialLoad;
-
-  const opacityText = useSharedValue(0.6);
-  useEffect(() => {
-    opacityText.value = withRepeat(
-      withSequence(withTiming(1, { duration: 800 }), withTiming(0.6, { duration: 800 })), 
-      -1, true
-    );
-  }, []);
-  const pulseStyle = useAnimatedStyle(() => ({ opacity: opacityText.value }));
-
   return (
     <View style={styles.container}>
-      <View style={[styles.mapWrapper, StyleSheet.absoluteFillObject]}>
+      {/* Status Bar transparente para que el mapa sea 'full screen' */}
+      <StatusBar 
+        translucent 
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
+      
+      {/* CAPA 0: MAPA (Fondo total) */}
+      <View style={styles.mapWrapper}>
         <Map burritoLocation={location} isDarkMode={isDarkMode} />
       </View>
 
+      {/* CAPA 1: INTERFAZ (Botones y Menú) */}
       <View style={styles.uiLayer} pointerEvents="box-none">
-        <SafeAreaView style={styles.hamburgerContainer}>
-          <TouchableOpacity onPress={openDrawer} activeOpacity={0.8} style={styles.hamburgerButton}>
-            <Icon name="menu" size={28} color={COLORS.shadow} />
+        
+        {/* CONTENEDOR SUPERIOR: Usa insets.top para evitar el notch */}
+        <View 
+          style={[
+            styles.topBar, 
+            { 
+              // En Android sumamos el alto del status bar + 10px de aire
+              // En iOS insets.top ya incluye el notch
+              paddingTop: Platform.OS === 'android' ? insets.top + 10 : insets.top + 5 
+            }
+          ]} 
+          pointerEvents="box-none"
+        >
+          <TouchableOpacity 
+            onPress={openDrawer} 
+            activeOpacity={0.8} 
+            style={styles.hamburgerButton}
+          >
+            <Icon name="menu" size={28} color="#333" />
           </TouchableOpacity>
-        </SafeAreaView>
+        </View>
 
-        <FAB isFollowingBus={isFollowing} onFollowBus={() => setCommand('follow')} onCenterMap={() => setCommand('center')} />
+        {/* CONTENEDOR INFERIOR: Le pasamos el margen inferior al FAB si fuera necesario */}
+        <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: insets.bottom }} pointerEvents="box-none">
+          <FAB 
+            isFollowingBus={isFollowing} 
+            onFollowBus={() => setCommand('follow')} 
+            onCenterMap={() => setCommand('center')} 
+          />
+        </View>
       </View>
 
+      {/* DRAWER */}
       <View style={styles.drawerWrapper} pointerEvents="box-none">
         <CustomDrawer />
       </View>
@@ -71,12 +99,26 @@ export const MapScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' }, mapWrapper: { zIndex: 1 }, uiLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 }, drawerWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 20 },
-  hamburgerContainer: { position: 'absolute', top: 40, left: 20 },
-  hamburgerButton: {
-    backgroundColor: 'white', width: 45, height: 45, borderRadius: 28, justifyContent: 'center', alignItems: 'center',
-    elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 5,
+  container: { flex: 1, backgroundColor: '#000' },
+  mapWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
+  uiLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
+  drawerWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 20 },
+  topBar: { 
+    paddingHorizontal: 20, 
+    flexDirection: 'row',
+    justifyContent: 'flex-start'
   },
-  overAllVelo: { ...StyleSheet.absoluteFillObject, zIndex: 9999, elevation: 100 }, loadingOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' }, lottieLoader: { width: 250, height: 250 },
-  loadingText: { marginTop: 20, fontSize: 22, color: '#FFF', fontFamily: TYPOGRAPHY.primary.bold, letterSpacing: -0.5 }
+  hamburgerButton: {
+    backgroundColor: 'white', 
+    width: 54, 
+    height: 54, 
+    borderRadius: 27, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    elevation: 8, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.25, 
+    shadowRadius: 6,
+  }
 });
