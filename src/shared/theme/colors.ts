@@ -1,5 +1,5 @@
 export const COLORS = {
-  primary: '#00AEEF', // ✨ EL CELESTE DEL BURRITO
+  primary: '#00AEEF', 
   secondary: '#F5F5F5',
   background: '#FFFFFF',
   textTitle: '#222222',
