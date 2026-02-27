@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-// 🔥 CAMBIO 1: Renombramos Easing a RNEasing para las animaciones del Burrito
 import { StyleSheet, View, Easing as RNEasing, Animated as RNAnimated, TouchableOpacity } from 'react-native'; 
 import Mapbox from '@rnmapbox/maps';
 import { COLORS } from '../../../shared/theme/colors';
@@ -7,8 +6,7 @@ import { PARADEROS, RUTA_GEOJSON } from '../constants/map_route';
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
-// 🔥 CAMBIO 2: Importamos el Easing de Reanimated para la tarjeta
-import Reanimated, { FadeInDown, FadeOutDown, Easing } from 'react-native-reanimated';
+import Reanimated, { FadeInDown, FadeOutDown, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';
 
 Mapbox.setAccessToken('pk.eyJ1IjoiZWxyb2JhY3VlbnRhcyIsImEiOiJjbWx4MDc1Y2gwanpoM2txMzd1Mzl6YjN6In0.9c9y92FLxw_MeIZaX4EdPQ'); 
 
@@ -48,6 +46,70 @@ const snapToRoute = (lat: number, lng: number) => {
   return closestPoint; 
 };
 
+// ==========================================
+// 📡 COMPONENTE AISLADO DEL RADAR (3 ESTADOS)
+// ==========================================
+type RadarStatus = 'active' | 'stationary' | 'offline';
+
+const RadarPulse = ({ status }: { status: RadarStatus }) => {
+  const radarScale = useSharedValue(1);
+  const radarOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    cancelAnimation(radarScale);
+    cancelAnimation(radarOpacity);
+
+    radarScale.value = 1;
+    radarOpacity.value = 0.85;
+
+    // 🔥 Tiempos de latido según el estado
+    let duration = 1200; // Azul: Rápido
+    if (status === 'stationary') duration = 2500; // Naranja: Lento
+    if (status === 'offline') duration = 4000; // Rojo: Muy lento (casi muerto)
+
+    radarScale.value = withRepeat(
+      withTiming(4.0, { duration, easing: Easing.out(Easing.ease) }),
+      -1, false
+    );
+    radarOpacity.value = withRepeat(
+      withTiming(0, { duration, easing: Easing.out(Easing.ease) }),
+      -1, false
+    );
+
+    return () => {
+      cancelAnimation(radarScale);
+      cancelAnimation(radarOpacity);
+    };
+  }, [status]);
+
+  const radarAnimatedStyle = useAnimatedStyle(() => {
+    // 🔥 LÓGICA DE COLORES POR ESTADO
+    let borderColor = COLORS.primary;
+    let backgroundColor = 'rgba(0, 174, 239, 0.35)'; // Azul
+
+    if (status === 'stationary') {
+      borderColor = '#FF9800';
+      backgroundColor = 'rgba(255, 152, 0, 0.35)'; // Naranja
+    } else if (status === 'offline') {
+      borderColor = '#F44336'; 
+      backgroundColor = 'rgba(244, 67, 54, 0.35)'; // Rojo Fuerte
+    }
+
+    return {
+      transform: [{ scale: radarScale.value }],
+      opacity: radarOpacity.value,
+      borderColor,
+      backgroundColor,
+    };
+  }, [status]);
+
+  return (
+    <View style={styles.radarContainer} pointerEvents="none">
+      <Reanimated.View style={[styles.radarRing, radarAnimatedStyle]} />
+    </View>
+  );
+};
+
 export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const cameraRef = useRef<Mapbox.Camera>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
@@ -57,11 +119,34 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const [boundsActive, setBoundsActive] = useState(false);
   const [isFirstBusLoad, setIsFirstBusLoad] = useState(true);
 
+  const [safeToRenderRadar, setSafeToRenderRadar] = useState(true);
+
+  // 🔥 ESTADOS DEL RADAR (Azul, Naranja, Rojo)
+  const [radarStatus, setRadarStatus] = useState<RadarStatus>('active');
+  const stationaryTimer = useRef<NodeJS.Timeout | null>(null);
+  const offlineTimer = useRef<NodeJS.Timeout | null>(null);
+
   const latAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[1])).current;
   const lngAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[0])).current;
   
   const [currentPos, setCurrentPos] = useState<number[] | null>(null);
   const [currentHeading, setCurrentHeading] = useState<number>(0);
+
+  useEffect(() => {
+    setSafeToRenderRadar(false);
+    const timer = setTimeout(() => {
+      setSafeToRenderRadar(true);
+    }, 750); 
+    return () => clearTimeout(timer);
+  }, [isDarkMode]);
+
+  // Limpieza general de ambos timers
+  useEffect(() => {
+    return () => {
+      if (stationaryTimer.current) clearTimeout(stationaryTimer.current);
+      if (offlineTimer.current) clearTimeout(offlineTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -75,6 +160,22 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     if (burritoLocation) {
       const snappedCoords = snapToRoute(burritoLocation.latitude, burritoLocation.longitude);
       
+      // 📡 LÓGICA DE LOS 3 ESTADOS (AZUL -> NARANJA -> ROJO)
+      setRadarStatus('active'); // Llega dato = Azul
+      
+      if (stationaryTimer.current) clearTimeout(stationaryTimer.current);
+      if (offlineTimer.current) clearTimeout(offlineTimer.current);
+
+      // Cronómetro 1: A los 15s pasa a Naranja
+      stationaryTimer.current = setTimeout(() => {
+        setRadarStatus('stationary'); 
+      }, 15000); 
+
+      // Cronómetro 2: A los 60s pasa a Rojo
+      offlineTimer.current = setTimeout(() => {
+        setRadarStatus('offline'); 
+      }, 60000); 
+
       if (isFirstBusLoad) {
         latAnim.setValue(snappedCoords[1]);
         lngAnim.setValue(snappedCoords[0]);
@@ -83,7 +184,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
         setIsFirstBusLoad(false); 
       } else {
         RNAnimated.parallel([
-          // 🔥 CAMBIO 3: Usamos RNEasing para el movimiento del bus
           RNAnimated.timing(latAnim, { toValue: snappedCoords[1], duration: 3000, easing: RNEasing.linear, useNativeDriver: false }),
           RNAnimated.timing(lngAnim, { toValue: snappedCoords[0], duration: 3000, easing: RNEasing.linear, useNativeDriver: false }),
         ]).start();
@@ -188,6 +288,17 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           />
         </Mapbox.ShapeSource>
 
+        {safeToRenderRadar && currentPos && (
+          <Mapbox.MarkerView 
+            id={`radar-${isDarkMode}`} 
+            coordinate={currentPos} 
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            {/* 🔥 Le pasamos el estado actual al radar (active, stationary, offline) */}
+            <RadarPulse status={radarStatus} />
+          </Mapbox.MarkerView>
+        )}
+
         {PARADEROS.map(p => (
           <Mapbox.MarkerView 
             key={p.id} 
@@ -228,12 +339,10 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
         )}
       </Mapbox.MapView>
 
-      {/* TARJETA DE PARADERO */}
       {selectedStop && (
         <Reanimated.View 
           key={selectedStop.id} 
           entering={FadeInDown.springify().stiffness(400).damping(25).mass(0.5)} 
-          // 🔥 CAMBIO 4: Ahora usa el Easing de Reanimated
           exiting={FadeOutDown.duration(150).easing(Easing.in(Easing.ease))} 
           style={styles.cardWrapper} 
           pointerEvents="box-none"
@@ -261,5 +370,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3,
   }, 
+  radarContainer: {
+    width: 120, 
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radarRing: {
+    width: 32, 
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 4, 
+    position: 'absolute',
+  },
   cardWrapper: { position: 'absolute', bottom: 40, alignSelf: 'center', zIndex: 100, elevation: 10 }
 });
