@@ -7,6 +7,13 @@ import { StopCard } from './StopCard';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
 import Reanimated, { FadeInDown, FadeOutDown, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';
+// 🔥 IMPORTAMOS LA LIBRERÍA DE HÁPTICA
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+
+const hapticOptions = {
+  enableVibrateFallback: true,
+  ignoreAndroidSystemSettings: false,
+};
 
 Mapbox.setAccessToken('pk.eyJ1IjoiZWxyb2JhY3VlbnRhcyIsImEiOiJjbWx4MDc1Y2gwanpoM2txMzd1Mzl6YjN6In0.9c9y92FLxw_MeIZaX4EdPQ'); 
 
@@ -46,9 +53,6 @@ const snapToRoute = (lat: number, lng: number) => {
   return closestPoint; 
 };
 
-// ==========================================
-// 📡 COMPONENTE AISLADO DEL RADAR (3 ESTADOS)
-// ==========================================
 type RadarStatus = 'active' | 'stationary' | 'offline';
 
 const RadarPulse = ({ status }: { status: RadarStatus }) => {
@@ -62,10 +66,9 @@ const RadarPulse = ({ status }: { status: RadarStatus }) => {
     radarScale.value = 1;
     radarOpacity.value = 0.85;
 
-    // 🔥 Tiempos de latido según el estado
-    let duration = 1200; // Azul: Rápido
-    if (status === 'stationary') duration = 2500; // Naranja: Lento
-    if (status === 'offline') duration = 4000; // Rojo: Muy lento (casi muerto)
+    let duration = 1200; 
+    if (status === 'stationary') duration = 2500; 
+    if (status === 'offline') duration = 4000; 
 
     radarScale.value = withRepeat(
       withTiming(4.0, { duration, easing: Easing.out(Easing.ease) }),
@@ -83,16 +86,15 @@ const RadarPulse = ({ status }: { status: RadarStatus }) => {
   }, [status]);
 
   const radarAnimatedStyle = useAnimatedStyle(() => {
-    // 🔥 LÓGICA DE COLORES POR ESTADO
     let borderColor = COLORS.primary;
-    let backgroundColor = 'rgba(0, 174, 239, 0.35)'; // Azul
+    let backgroundColor = 'rgba(0, 174, 239, 0.35)'; 
 
     if (status === 'stationary') {
       borderColor = '#FF9800';
-      backgroundColor = 'rgba(255, 152, 0, 0.35)'; // Naranja
+      backgroundColor = 'rgba(255, 152, 0, 0.35)'; 
     } else if (status === 'offline') {
       borderColor = '#F44336'; 
-      backgroundColor = 'rgba(244, 67, 54, 0.35)'; // Rojo Fuerte
+      backgroundColor = 'rgba(244, 67, 54, 0.35)'; 
     }
 
     return {
@@ -121,7 +123,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
 
   const [safeToRenderRadar, setSafeToRenderRadar] = useState(true);
 
-  // 🔥 ESTADOS DEL RADAR (Azul, Naranja, Rojo)
   const [radarStatus, setRadarStatus] = useState<RadarStatus>('active');
   const stationaryTimer = useRef<NodeJS.Timeout | null>(null);
   const offlineTimer = useRef<NodeJS.Timeout | null>(null);
@@ -140,7 +141,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     return () => clearTimeout(timer);
   }, [isDarkMode]);
 
-  // Limpieza general de ambos timers
   useEffect(() => {
     return () => {
       if (stationaryTimer.current) clearTimeout(stationaryTimer.current);
@@ -160,18 +160,15 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     if (burritoLocation) {
       const snappedCoords = snapToRoute(burritoLocation.latitude, burritoLocation.longitude);
       
-      // 📡 LÓGICA DE LOS 3 ESTADOS (AZUL -> NARANJA -> ROJO)
-      setRadarStatus('active'); // Llega dato = Azul
+      setRadarStatus('active'); 
       
       if (stationaryTimer.current) clearTimeout(stationaryTimer.current);
       if (offlineTimer.current) clearTimeout(offlineTimer.current);
 
-      // Cronómetro 1: A los 15s pasa a Naranja
       stationaryTimer.current = setTimeout(() => {
         setRadarStatus('stationary'); 
       }, 15000); 
 
-      // Cronómetro 2: A los 60s pasa a Rojo
       offlineTimer.current = setTimeout(() => {
         setRadarStatus('offline'); 
       }, 60000); 
@@ -294,7 +291,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
             coordinate={currentPos} 
             anchor={{ x: 0.5, y: 0.5 }}
           >
-            {/* 🔥 Le pasamos el estado actual al radar (active, stationary, offline) */}
             <RadarPulse status={radarStatus} />
           </Mapbox.MarkerView>
         )}
@@ -307,7 +303,11 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           >
             <TouchableOpacity 
               activeOpacity={0.6}
-              onPress={() => setSelectedStopId(prev => prev === p.id ? null : p.id)}
+              onPress={() => {
+                // 🔥 LÓGICA DE VIBRACIÓN SECA AL TOCAR EL PARADERO
+                ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
+                setSelectedStopId(prev => prev === p.id ? null : p.id);
+              }}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} 
               style={[
                 styles.markerContainer,

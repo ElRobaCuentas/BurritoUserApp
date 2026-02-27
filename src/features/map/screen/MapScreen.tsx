@@ -17,17 +17,21 @@ import { Map } from '../components/Map';
 import { FAB } from '../components/FAB';
 import { CustomDrawer } from '../components/CustomDrawer'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-// import { COLORS } from '../../../shared/theme/colors'; // Definimos el primario aquí para tener todo en un archivo
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
+// 🔥 IMPORTAMOS LA LIBRERÍA DE HÁPTICA
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
-// 🔥 GRADIENTES Y ANIMACIONES
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeOut } from 'react-native-reanimated';
 
-// Define el color primario y una variante oscura sólida para el degradado profesional
+const hapticOptions = {
+  enableVibrateFallback: true,
+  ignoreAndroidSystemSettings: false,
+};
+
 const BURRITO_COLORS = {
   primary: '#00AEEF',
-  darkPrimary: '#005D8C', // Azul oscuro sólido y opaco para el modo oscuro
+  darkPrimary: '#005D8C', 
 };
 
 export const MapScreen = () => {
@@ -43,22 +47,28 @@ export const MapScreen = () => {
 
   useEffect(() => {
     actions.startTracking();
-    // ⏳ Mínimo 1.5 segundos de pantalla de carga obligatoria para que el gradiente se luzca
     const timer = setTimeout(() => setMinTimeReached(true), 1500);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    // 🎯 Solo termina la carga si pasó el tiempo Y tenemos ubicación real
     if (minTimeReached && location) {
       setHasInitialLoad(true);
     }
   }, [location, minTimeReached]);
 
-  // 🎨 CONFIGURACIÓN DEL GRADIENTE PROFESIONAL OPACO (SIN TRANSPARENCIAS)
   const loadingGradient = isDarkMode 
-    ? ['#121212', BURRITO_COLORS.darkPrimary] // Sólido: de oscuro a azul profundo
-    : ['#FFFFFF', BURRITO_COLORS.primary];   // Sólido: de blanco a azul primario
+    ? ['#121212', BURRITO_COLORS.darkPrimary] 
+    : ['#FFFFFF', BURRITO_COLORS.primary];  
+
+  // 🔥 LÓGICA DE DOBLE VIBRACIÓN SUAVE PARA EL MENÚ
+  const handleOpenDrawerWithHaptic = () => {
+    ReactNativeHapticFeedback.trigger("soft", hapticOptions);
+    setTimeout(() => {
+      ReactNativeHapticFeedback.trigger("soft", hapticOptions);
+    }, 120); // Retraso de 120ms para simular el doble tick
+    openDrawer();
+  };
 
   return (
     <View style={styles.container}>
@@ -68,15 +78,12 @@ export const MapScreen = () => {
         barStyle={isDarkMode ? "light-content" : "dark-content"} 
       />
       
-      {/* CAPA 0: MAPA (Carga en silencio al fondo, completamente tapado por el "muro" de carga) */}
       <View style={styles.mapWrapper}>
         <Map burritoLocation={location} isDarkMode={isDarkMode} />
       </View>
 
-      {/* 🚀 PANTALLA DE CARGA INQUEBRANTABLE (Con Desvanecido Animado y Gradiente Sólido) */}
       {!hasInitialLoad && (
         <Animated.View 
-          // El FadeOut.duration(600) hace que la pantalla se disuelva suavemente al terminar, revelando la UI
           exiting={FadeOut.duration(600)} 
           style={styles.loadingOverlay}
         >
@@ -84,7 +91,6 @@ export const MapScreen = () => {
             colors={loadingGradient} 
             style={styles.gradientWrapper}
           >
-            {/* Contenedor del logo/texto para darle más presencia */}
             <View style={styles.loaderContent}>
               <ActivityIndicator size="large" color={BURRITO_COLORS.primary} style={{ marginBottom: 20 }} />
               <Text style={[styles.loadingText, { color: isDarkMode ? '#FFFFFF' : '#FFFF' }]}>
@@ -98,7 +104,6 @@ export const MapScreen = () => {
         </Animated.View>
       )}
 
-      {/* 📱 INTERFAZ DEL MAPA (Los botones SOLO existen si la carga ya terminó. ¡Solucionamos el retraso!) */}
       {hasInitialLoad && (
         <View style={styles.uiLayer} pointerEvents="box-none">
           <View 
@@ -109,7 +114,7 @@ export const MapScreen = () => {
             pointerEvents="box-none"
           >
             <TouchableOpacity 
-              onPress={openDrawer} 
+              onPress={handleOpenDrawerWithHaptic} // 🔥 Usamos la nueva función con vibración
               activeOpacity={0.8} 
               style={styles.hamburgerButton}
             >
@@ -127,7 +132,6 @@ export const MapScreen = () => {
         </View>
       )}
 
-      {/* DRAWER */}
       <View style={styles.drawerWrapper} pointerEvents="box-none">
         <CustomDrawer />
       </View>
@@ -138,11 +142,9 @@ export const MapScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   mapWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
-  
-  // 🔥 ESTILO DE CARGA INQUEBRANTABLE, SÓLIDO Y ANIMADO
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 999, // Superpone a todo: Drawers, UI, y Mapa
+    zIndex: 999, 
   },
   gradientWrapper: {
     flex: 1,
@@ -167,7 +169,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
     letterSpacing: 0.3,
   },
-
   uiLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
   drawerWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 20 },
   topBar: { 
