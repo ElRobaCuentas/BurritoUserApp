@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { StyleSheet, View, Easing, Animated as RNAnimated, TouchableOpacity } from 'react-native'; 
+// 🔥 CAMBIO 1: Renombramos Easing a RNEasing para las animaciones del Burrito
+import { StyleSheet, View, Easing as RNEasing, Animated as RNAnimated, TouchableOpacity } from 'react-native'; 
 import Mapbox from '@rnmapbox/maps';
 import { COLORS } from '../../../shared/theme/colors';
 import { PARADEROS, RUTA_GEOJSON } from '../constants/map_route';
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
-import Reanimated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+// 🔥 CAMBIO 2: Importamos el Easing de Reanimated para la tarjeta
+import Reanimated, { FadeInDown, FadeOutDown, Easing } from 'react-native-reanimated';
 
 Mapbox.setAccessToken('pk.eyJ1IjoiZWxyb2JhY3VlbnRhcyIsImEiOiJjbWx4MDc1Y2gwanpoM2txMzd1Mzl6YjN6In0.9c9y92FLxw_MeIZaX4EdPQ'); 
 
@@ -53,22 +55,18 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   
   const [isMapReady, setIsMapReady] = useState(false);
   const [boundsActive, setBoundsActive] = useState(false);
-
-  // 🔥 BANDERA DE CONTROL: Para evitar el deslizamiento inicial desde el estadio
   const [isFirstBusLoad, setIsFirstBusLoad] = useState(true);
 
-  // === LÓGICA DEL BURRITO MEJORADA ===
   const latAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[1])).current;
   const lngAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[0])).current;
   
-  // Iniciamos en null para que no aparezca el bus "fantasma" en el estadio al cargar
   const [currentPos, setCurrentPos] = useState<number[] | null>(null);
   const [currentHeading, setCurrentHeading] = useState<number>(0);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (selectedStopId) {
-      timer = setTimeout(() => setSelectedStopId(null), 4000);
+      timer = setTimeout(() => setSelectedStopId(null), 5000); 
     }
     return () => { if (timer) clearTimeout(timer); };
   }, [selectedStopId]);
@@ -78,17 +76,16 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
       const snappedCoords = snapToRoute(burritoLocation.latitude, burritoLocation.longitude);
       
       if (isFirstBusLoad) {
-        // 🚀 SALTO INSTANTÁNEO: La primera vez va directo a la posición real de Firebase
         latAnim.setValue(snappedCoords[1]);
         lngAnim.setValue(snappedCoords[0]);
         setCurrentPos(snappedCoords);
         setCurrentHeading((burritoLocation.heading || 0) - 90);
-        setIsFirstBusLoad(false); // Desactivamos para que las siguientes sí sean animadas
+        setIsFirstBusLoad(false); 
       } else {
-        // 🐢 MOVIMIENTO SUAVE: Animación de 3 segundos para las siguientes actualizaciones
         RNAnimated.parallel([
-          RNAnimated.timing(latAnim, { toValue: snappedCoords[1], duration: 3000, easing: Easing.linear, useNativeDriver: false }),
-          RNAnimated.timing(lngAnim, { toValue: snappedCoords[0], duration: 3000, easing: Easing.linear, useNativeDriver: false }),
+          // 🔥 CAMBIO 3: Usamos RNEasing para el movimiento del bus
+          RNAnimated.timing(latAnim, { toValue: snappedCoords[1], duration: 3000, easing: RNEasing.linear, useNativeDriver: false }),
+          RNAnimated.timing(lngAnim, { toValue: snappedCoords[0], duration: 3000, easing: RNEasing.linear, useNativeDriver: false }),
         ]).start();
         setCurrentHeading((burritoLocation.heading || 0) - 90);
       }
@@ -104,14 +101,13 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   }, []);
 
   const busShape = useMemo(() => {
-    if (!currentPos) return null; // No dibujamos nada si no hay posición real
+    if (!currentPos) return null; 
     return {
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: currentPos }
     };
   }, [currentPos]);
 
-  // === ARRANQUE DEL MAPA ===
   useEffect(() => {
     if (isMapReady) {
       cameraRef.current?.setCamera({
@@ -126,7 +122,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     }
   }, [isMapReady]);
 
-  // === COMANDOS DE CÁMARA ===
   useEffect(() => {
     if (command === 'center') {
       cameraRef.current?.setCamera({ 
@@ -193,7 +188,29 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           />
         </Mapbox.ShapeSource>
 
-        {/* BUS: Solo se muestra si busShape existe (evita el estadio al inicio) */}
+        {PARADEROS.map(p => (
+          <Mapbox.MarkerView 
+            key={p.id} 
+            id={p.id} 
+            coordinate={[p.longitude, p.latitude]} 
+          >
+            <TouchableOpacity 
+              activeOpacity={0.6}
+              onPress={() => setSelectedStopId(prev => prev === p.id ? null : p.id)}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} 
+              style={[
+                styles.markerContainer,
+                { 
+                  backgroundColor: currentStopTheme.bg,
+                  borderColor: currentStopTheme.border
+                }
+              ]}
+            >
+              <Icon name="bus-stop" size={14} color={currentStopTheme.icon} />
+            </TouchableOpacity>
+          </Mapbox.MarkerView>
+        ))}
+
         {busShape && (
           <Mapbox.ShapeSource id="busSource" shape={busShape as any}>
             <Mapbox.SymbolLayer 
@@ -209,35 +226,15 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
             />
           </Mapbox.ShapeSource>
         )}
-        
-        {PARADEROS.map(p => (
-          <Mapbox.MarkerView 
-            key={p.id} 
-            id={p.id} 
-            coordinate={[p.longitude, p.latitude]} 
-          >
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => setSelectedStopId(p.id)}
-              style={[
-                styles.markerContainer,
-                { 
-                  backgroundColor: currentStopTheme.bg,
-                  borderColor: currentStopTheme.border
-                }
-              ]}
-            >
-              <Icon name="bus-stop" size={14} color={currentStopTheme.icon} />
-            </TouchableOpacity>
-          </Mapbox.MarkerView>
-        ))}
       </Mapbox.MapView>
 
+      {/* TARJETA DE PARADERO */}
       {selectedStop && (
         <Reanimated.View 
           key={selectedStop.id} 
-          entering={FadeInDown.springify().damping(15)} 
-          exiting={FadeOutDown} 
+          entering={FadeInDown.springify().stiffness(400).damping(25).mass(0.5)} 
+          // 🔥 CAMBIO 4: Ahora usa el Easing de Reanimated
+          exiting={FadeOutDown.duration(150).easing(Easing.in(Easing.ease))} 
           style={styles.cardWrapper} 
           pointerEvents="box-none"
         >

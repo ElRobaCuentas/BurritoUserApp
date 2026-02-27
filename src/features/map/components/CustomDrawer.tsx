@@ -38,7 +38,7 @@ const AVATAR_LIST: { id: AvatarId; label: string }[] = [
 
 export const CustomDrawer = () => {
   const { isOpen, closeDrawer } = useDrawerStore() as any;
-  const { username, avatar, setAvatar, logout } = useUserStore();
+  const { username, avatar, setAvatar, logout, nickname } = useUserStore();
   const { isDarkMode, toggleTheme } = useThemeStore() as any; 
 
   const [isExpanding, setIsExpanding] = useState(false);
@@ -134,8 +134,9 @@ export const CustomDrawer = () => {
           <Text style={[styles.userName, { color: theme.text }]}>{username || 'Sanmarquino'}</Text>
           <View style={[styles.facultyBadge, { backgroundColor: COLORS.primary + '20' }]}>
             <Icon name="school-outline" size={14} color={COLORS.primary} />
+            {/* 🔥 AQUÍ SUCEDE LA MAGIA: Mostramos el apodo chistoso */}
             <Text style={[styles.facultyText, { color: COLORS.primary }]}>
-              {avatar ? avatar.toUpperCase() : 'ESTUDIANTE'}
+              {nickname ? nickname.toUpperCase() : (avatar ? avatar.toUpperCase() : 'ESTUDIANTE')}
             </Text>
           </View>
         </View>

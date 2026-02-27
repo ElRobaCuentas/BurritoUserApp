@@ -18,8 +18,8 @@ import DeviceInfo from 'react-native-device-info';
 import database from '@react-native-firebase/database';
 
 const AVATARES = [
-  { id: 'economista', label: 'ECONOMISTA', url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' }, 
-  { id: 'ingeniero', label: 'INGENIERO', url: require('../../../assets/INGENIERO.png'), color: '#FF5757' },    
+  { id: 'economista', label: 'ECONOMIA', url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' }, 
+  { id: 'ingeniero', label: 'INGENIERIA', url: require('../../../assets/INGENIERO.png'), color: '#FF5757' },    
   { id: 'salud', label: 'SALUD', url: require('../../../assets/SALUD.png'), color: '#8C52FF' },   
   { id: 'humanidades', label: 'HUMANIDADES', url: require('../../../assets/HUMANIDADES.png'), color: '#5CE1E6' }, 
 ];
@@ -30,7 +30,8 @@ export const LoginScreen = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState('');
   
-  const { setUsername, setAvatar, setUid, login } = useUserStore();
+  // 🔥 SOLUCIÓN: Ya no extraemos setUsername ni setUid, solo usamos nuestra súper función 'login'
+  const { login } = useUserStore();
 
   const sheetY = useSharedValue(screenHeight);
   const backdropOpacity = useSharedValue(0);
@@ -39,7 +40,6 @@ export const LoginScreen = () => {
   // --- CÁLCULOS RESPONSIVOS ---
   const horizontalPadding = 20;
   const gap = 20;
-  // Calculamos el tamaño del avatar para que siempre quepan 2 por fila
   const avatarWrapperWidth = (screenWidth - (horizontalPadding * 2) - gap) / 2;
   const circleSize = avatarWrapperWidth * 0.85;
 
@@ -90,10 +90,8 @@ export const LoginScreen = () => {
         sheetY.value = withTiming(screenHeight, { duration: 250 });
 
         setTimeout(() => {
-          setUid(uniqueId);
-          setUsername(name.trim());
-          setAvatar(selectedId as AvatarId);
-          login();
+          // 🔥 SOLUCIÓN: Enviamos todo de un solo golpe. El Store se encarga del resto (y de asignar el apodo)
+          login(uniqueId, name.trim(), selectedId as AvatarId);
           navigation.replace('MainApp');
         }, 300); 
 
@@ -101,7 +99,7 @@ export const LoginScreen = () => {
         Alert.alert("Error", "No pudimos conectar con la base de datos.");
       }
     }
-  }, [name, selectedId, navigation, setUsername, setAvatar, setUid, login, screenHeight]);
+  }, [name, selectedId, navigation, login, screenHeight]);
 
   const breathingStyle = useAnimatedStyle(() => ({
     transform: [{ scale: breathing.value }],
