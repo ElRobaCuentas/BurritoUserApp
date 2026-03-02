@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
+import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useUserStore } from '../../store/userStore';
 
@@ -17,27 +16,20 @@ export type RootStackParams = {
 const Stack = createStackNavigator<RootStackParams>();
 
 export const StackNavigator = () => {
-  const isLoggedIn = useUserStore((state) => state.isLoggedIn);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setIsReady(true), 200);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  if (!isReady) {
-    return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
-  }
+  // Extraemos el estado de login
+  const isLoggedIn = useUserStore((state: { isLoggedIn: any; }) => state.isLoggedIn);
 
   return (
     <Stack.Navigator
+      // Si está logueado va al MainApp, si no al Login
       initialRouteName={isLoggedIn ? 'MainApp' : 'LoginScreen'} 
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ 
+        headerShown: false,
+      }}
     >
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
-     <Stack.Screen name="MainApp" component={DrawerNavigator} />      
-     <Stack.Screen name="LoadingScreen" component={LoadingScreen} />
-      
+      <Stack.Screen name="MainApp" component={DrawerNavigator} />      
+      <Stack.Screen name="LoadingScreen" component={LoadingScreen} />
     </Stack.Navigator>
   );
 };

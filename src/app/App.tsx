@@ -1,58 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-// 🔥 IMPORTAMOS LOS TEMAS DE REACT NAVIGATION
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import BootSplash from 'react-native-bootsplash';
-import { BrandingSplash } from './screen/BrandingSplash';
+
 import { StackNavigator } from './navigations/StackNavigator';
 import { useUserStore } from '../store/userStore'; 
 import { useThemeStore } from '../store/themeStore'; 
+import { AnimatedSplash } from './screen/AnimatedSplash';
 
 const App = () => {
-  const [isReady, setIsReady] = useState(false);
+  const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
   
-  const userHydrated = useUserStore((state) => state._hasHydrated);
-  
-  // Extraemos lo necesario del nuevo themeStore manual
-  const themeHydrated = useThemeStore((state) => state._hasHydrated);
-  const isDarkMode = useThemeStore((state) => state.isDarkMode);
-  const loadThemeFromStorage = useThemeStore((state) => state.loadThemeFromStorage);
+  const userHydrated = useUserStore((state: any) => state._hasHydrated);
+  const themeHydrated = useThemeStore((state: any) => state._hasHydrated);
+  const isDarkMode = useThemeStore((state: any) => state.isDarkMode);
+  const loadThemeFromStorage = useThemeStore((state: any) => state.loadThemeFromStorage);
+
+  const appIsFullyReady = userHydrated && themeHydrated;
 
   useEffect(() => {
-    // 1. OBLIGAMOS A LA APP A LEER EL DISCO DURO INMEDIATAMENTE
     loadThemeFromStorage();
-
-    const init = async () => {
-      try {
-        console.log("Intentando ocultar Bootsplash...");
-        setTimeout(async () => {
-          await BootSplash.hide({ fade: true });
-          console.log("Bootsplash ocultado con éxito");
-        }, 500);
-      } catch (e) {
-        console.warn("Error ocultando el splash:", e);
-        BootSplash.hide(); 
-      }
-    };
-    init();
   }, []);
 
-  const appIsFullyReady = isReady && userHydrated && themeHydrated;
+  if (!appIsFullyReady) {
+    return null; 
+  }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#00AEEF' }}>
       <SafeAreaProvider>
-        {!appIsFullyReady ? (
-          <BrandingSplash onFinish={() => setIsReady(true)} />
-        ) : (
-          /* 🔥 EL ESCUDO DEFINITIVO: 
-             Si no le pasamos el "theme", tu Honor asume el mando y lo pone oscuro.
-             Al pasárselo así, bloqueamos al sistema operativo. */
-          <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
-            <StackNavigator />
-          </NavigationContainer>
+        
+        {/* 🔥 PRO TWEAK: Hacemos que la barra superior se fusione con la app */}
+        <StatusBar 
+          backgroundColor={showAnimatedSplash ? '#00AEEF' : (isDarkMode ? '#000' : '#FFF')} 
+          barStyle={showAnimatedSplash ? 'light-content' : (isDarkMode ? 'light-content' : 'dark-content')}
+          animated={true}
+        />
+        
+        <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
+          <StackNavigator />
+        </NavigationContainer>
+
+        {/* EL TELÓN ANIMADO */}
+        {showAnimatedSplash && (
+          <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
+            <AnimatedSplash onFinish={() => setShowAnimatedSplash(false)} />
+          </View>
         )}
+
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
