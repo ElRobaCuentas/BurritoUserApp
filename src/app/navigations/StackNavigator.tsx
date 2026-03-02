@@ -1,7 +1,6 @@
 import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 
-// 🔥 IMPORTAMOS EL TIPO USERSTATE
 import { useUserStore, UserState } from '../../store/userStore';
 
 import { LoginScreen } from '../../features/auth/screen/LoginScreen'; 
@@ -17,23 +16,21 @@ export type RootStackParams = {
 const Stack = createStackNavigator<RootStackParams>();
 
 export const StackNavigator = () => {
-  // 🔥 ADIÓS AL 'ANY'. AHORA ESTÁ 100% TIPADO
   const isLoggedIn = useUserStore((state: UserState) => state.isLoggedIn);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isLoggedIn ? (
-        // --- GRUPO PROTEGIDO (Solo si tiene la llave) ---
         <Stack.Screen name="MainApp" component={DrawerNavigator} />
       ) : (
-        // --- GRUPO PÚBLICO (La calle) ---
         <>
           <Stack.Screen 
             name="LoginScreen" 
             component={LoginScreen} 
             options={{
-              // 🔥 PRO TWEAK: Animación de "Retroceso" al cerrar sesión
-              animationTypeForReplace: !isLoggedIn ? 'pop' : 'push',
+              // 🔥 SOLUCIÓN 1: Eliminamos el "pop" (arrastre) y ponemos un Fade (desvanecimiento)
+              // Esto hace que el mapa simplemente desaparezca suavemente hacia el Login, sin tirones.
+              cardStyleInterpolator: CardStyleInterpolators.forFadeFromCenter,
             }}
           />
           <Stack.Screen name="LoadingScreen" component={LoadingScreen} />

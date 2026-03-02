@@ -58,7 +58,6 @@ export const CustomDrawer = () => {
   // 🔥 EFECTO PARA OBTENER LA VERSIÓN AL CARGAR EL DRAWER
   useEffect(() => {
     const fetchVersion = async () => {
-      // getVersion() devuelve el "versionName" (ej. 1.0.0) de build.gradle
       const version = DeviceInfo.getVersion();
       setAppVersion(`v.${version}`);
     };
@@ -205,7 +204,15 @@ export const CustomDrawer = () => {
 
           <TouchableOpacity 
             style={[styles.logoutButton, { backgroundColor: isDarkMode ? 'rgba(255,82,82,0.05)' : '#FFF5F5' }]} 
-            onPress={() => { logout(); closeDrawer(); }}
+            onPress={() => { 
+              // 🔥 Cerramos el Drawer visualmente primero
+              closeDrawer(); 
+              
+              // Pequeño delay para que la transición de navegación no "choque" con el mapa pesado
+              setTimeout(() => {
+                logout(); 
+              }, 200);
+            }}
           >
             <View style={styles.row}>
               <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,82,82,0.1)' }]}>
@@ -216,13 +223,11 @@ export const CustomDrawer = () => {
           </TouchableOpacity>
         </View>
 
-        {/* 🔥 AQUÍ PINTAMOS LA VERSIÓN DINÁMICA */}
         <View style={styles.footer}>
           <Text style={[styles.versionText, { color: theme.subText }]}>{appVersion || 'Cargando...'}</Text>
         </View>
       </Animated.View>
 
-      {/* MODAL (Sin Cambios) */}
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1}}>
           <View style={styles.modalOverlay}>
@@ -275,7 +280,6 @@ export const CustomDrawer = () => {
 };
 
 const styles = StyleSheet.create({
-  // ... (Tus estilos originales se mantienen exactamente igual)
   overlay: { ...StyleSheet.absoluteFillObject, zIndex: 9999 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   drawerContainer: { 
