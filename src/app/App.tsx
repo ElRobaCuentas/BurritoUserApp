@@ -23,26 +23,32 @@ const App = () => {
     loadThemeFromStorage();
   }, []);
 
-  if (!appIsFullyReady) {
-    return null; 
-  }
+  // 🔥 SOLUCIÓN QA 1: ELIMINAMOS EL `if (!appIsFullyReady) return null;`
+  // En su lugar, montamos el telón de inmediato para evitar el pantallazo blanco.
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#00AEEF' }}>
       <SafeAreaProvider>
         
-        {/* 🔥 PRO TWEAK: Hacemos que la barra superior se fusione con la app */}
         <StatusBar 
           backgroundColor={showAnimatedSplash ? '#00AEEF' : (isDarkMode ? '#000' : '#FFF')} 
           barStyle={showAnimatedSplash ? 'light-content' : (isDarkMode ? 'light-content' : 'dark-content')}
           animated={true}
         />
         
-        <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
-          <StackNavigator />
-        </NavigationContainer>
+        {/* 🔥 ESCUDO DE NAVEGACIÓN: 
+            El navegador SOLO se monta cuando la BD ya cargó por completo.
+            Así nos aseguramos de que StackNavigator lea el isLoggedIn correcto y no haya saltos.
+        */}
+        {appIsFullyReady && (
+          <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
+            <StackNavigator />
+          </NavigationContainer>
+        )}
 
-        {/* EL TELÓN ANIMADO */}
+        {/* 🔥 TELÓN ANIMADO (SPLASH):
+            Se renderiza desde el ms 0 y tapa toda la carga que ocurre detrás.
+        */}
         {showAnimatedSplash && (
           <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
             <AnimatedSplash onFinish={() => setShowAnimatedSplash(false)} />

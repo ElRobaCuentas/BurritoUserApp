@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, Image, 
   Switch, Dimensions, TouchableWithoutFeedback, TextInput, 
-  Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator 
+  Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
+  BackHandler // 🔥 1. IMPORTAMOS BACKHANDLER
 } from 'react-native';
 import { useDrawerStore } from '../../../store/drawerStore';
 import { useUserStore, AvatarId } from '../../../store/userStore';
@@ -54,6 +55,26 @@ export const CustomDrawer = () => {
 
   const translateX = useSharedValue(-DRAWER_WIDTH - 50); 
   const backdropOpacity = useSharedValue(0);
+
+  // 🔥 2. EL EFECTO INTERCEPTOR DEL BOTÓN ATRÁS DE ANDROID
+  useEffect(() => {
+    const onBackPress = () => {
+      if (isOpen) {
+        closeDrawer();
+        return true;
+      }
+      return false;
+    };
+
+    // addEventListener devuelve una suscripción
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    // En el cleanup, usamos .remove() sobre la suscripción
+    return () => {
+      subscription.remove();
+    };
+  }, [isOpen, closeDrawer]);
+  // -----------------------------------------------------------
 
   // 🔥 EFECTO PARA OBTENER LA VERSIÓN AL CARGAR EL DRAWER
   useEffect(() => {
@@ -205,13 +226,8 @@ export const CustomDrawer = () => {
           <TouchableOpacity 
             style={[styles.logoutButton, { backgroundColor: isDarkMode ? 'rgba(255,82,82,0.05)' : '#FFF5F5' }]} 
             onPress={() => { 
-              // 🔥 Cerramos el Drawer visualmente primero
               closeDrawer(); 
-              
-              // Pequeño delay para que la transición de navegación no "choque" con el mapa pesado
-              setTimeout(() => {
-                logout(); 
-              }, 200);
+              setTimeout(() => { logout(); }, 200);
             }}
           >
             <View style={styles.row}>
@@ -229,14 +245,19 @@ export const CustomDrawer = () => {
       </Animated.View>
 
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1}}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{flex: 1}}
+        >
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
               <View style={{flex: 1}} />
             </TouchableWithoutFeedback>
             
             <View style={[styles.bottomSheet, { backgroundColor: theme.bg }]}>
+              {/* Agregamos una barra pequeña para indicar que se puede deslizar */}
               <View style={styles.sheetHandle} />
+              
               <Text style={[styles.sheetTitle, { color: theme.text }]}>¿Cómo puedo mejorar?</Text>
               
               <View style={styles.starsRowModal}>
@@ -255,6 +276,8 @@ export const CustomDrawer = () => {
                 numberOfLines={4}
                 value={feedback} 
                 onChangeText={setFeedback} 
+                // Evita que el modal se cierre accidentalmente al escribir
+                blurOnSubmit={false}
               />
               
               <TouchableOpacity 

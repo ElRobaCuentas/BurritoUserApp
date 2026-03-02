@@ -10,8 +10,8 @@ export interface BurritoLocation {
 export interface MapRegion {
     latitude: number;
     longitude: number;
-    latitudeDelta: number; // Zoom vertical
-    longitudeDelta: number; // Zoom horizontal
+    latitudeDelta: number; 
+    longitudeDelta: number; 
 }
 
 
