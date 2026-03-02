@@ -1,7 +1,7 @@
 import { firebaseDatabase } from "../../../shared/config/firebase";
 import { BurritoLocation } from "../types";
+import database from '@react-native-firebase/database';
 
-// Definimos la interfaz para los comentarios aquí mismo para que sea clara
 interface FeedbackData {
   username: string;
   avatar: string;
@@ -10,13 +10,10 @@ interface FeedbackData {
 }
 
 const BURRITO_LOCATION_PATH = '/ubicacion_burrito';
-const FEEDBACK_PATH = '/comentarios'; // 👈 El nuevo nodo en tu Realtime Database
+const FEEDBACK_PATH = '/comentarios';
 
 export const MapService = {
 
-    /**
-     * Suscripción en tiempo real a la ubicación del bus
-     */
     subscribeToBusLocation: (onLocationUpdate: (location: BurritoLocation) => void) => {
         const ref = firebaseDatabase.ref(BURRITO_LOCATION_PATH);
 
@@ -38,18 +35,14 @@ export const MapService = {
         return () => ref.off('value', onValueChange);
     },
 
-    /**
-     * ✨ NUEVO: Envío de comentarios y calificación a Firebase
-     * Usa .push() para crear una lista de comentarios sin borrar los anteriores
-     */
     sendFeedback: async (data: FeedbackData) => {
         try {
-            // Creamos una referencia única dentro del nodo de comentarios
             const feedbackRef = firebaseDatabase.ref(FEEDBACK_PATH).push();
             
             await feedbackRef.set({
                 ...data,
-                timestamp: Date.now(), // Fecha de envío
+                // 🔥 QA FIX: Usamos el reloj atómico del servidor de Google
+                timestamp: database.ServerValue.TIMESTAMP, 
             });
             
             return true;

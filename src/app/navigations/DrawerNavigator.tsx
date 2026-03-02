@@ -47,12 +47,7 @@ const CustomDrawerContent = (props: any) => {
   : AVATAR_IMAGES.ingeniero;
 
   return (
-    // USAREMOS EL FONDO DE ODONTO QUE TENÍAS, CON BLUR
-    <ImageBackground
-  source={require('../../assets/odonto.jpg')}
-  style={{ flex: 1 }}
-  blurRadius={5} 
->
+    <ImageBackground>
       <LinearGradient
         colors={[drawerBg, drawerBg]}
         style={{ flex: 1 }}

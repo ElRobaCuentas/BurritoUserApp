@@ -15,7 +15,7 @@ interface BurritoStoreState {
 
 export const useBurritoStore = create<BurritoStoreState>((set) => {
   let stopBurritoLocationTracking: (() => void) | undefined;
-  let onlineInterval: NodeJS.Timeout;
+  let onlineInterval: NodeJS.Timeout | undefined;
 
   return {
     location: null,
@@ -24,27 +24,28 @@ export const useBurritoStore = create<BurritoStoreState>((set) => {
 
     actions: {
       startTracking: () => {
-        if (stopBurritoLocationTracking) return;
+        if (stopBurritoLocationTracking) {
+           stopBurritoLocationTracking();
+        }
+        if (onlineInterval) {
+           clearInterval(onlineInterval);
+        }
 
-        // 1. Reset total
         set({ isConnecting: true, location: null, isBusOnline: false });
 
         stopBurritoLocationTracking = MapService.subscribeToBusLocation((newLocation) => {
           const now = Date.now();
           const busTime = newLocation?.timestamp || 0;
           
-          // 🛡️ FILTRO DE FRESCURA INMEDIATO:
-          // Si el dato que llega de Firebase tiene más de 7 segundos, lo ignoramos para el "Online"
           const isFresh = (now - busTime) < 7000;
 
           set({ 
             location: newLocation,
             isConnecting: false,
-            isBusOnline: isFresh // Solo se pone online si el dato es reciente
+            isBusOnline: isFresh 
           });
         });
 
-        // 2. Mantenemos el intervalo para detectar cuando el script se apague después
         onlineInterval = setInterval(() => {
           set((state) => {
             if (!state.location) return { isBusOnline: false };
@@ -61,7 +62,10 @@ export const useBurritoStore = create<BurritoStoreState>((set) => {
           stopBurritoLocationTracking();
           stopBurritoLocationTracking = undefined;
         }
-        if (onlineInterval) clearInterval(onlineInterval);
+        if (onlineInterval) {
+          clearInterval(onlineInterval);
+          onlineInterval = undefined;
+        }
         set({ location: null, isConnecting: false, isBusOnline: false });
       }
     }

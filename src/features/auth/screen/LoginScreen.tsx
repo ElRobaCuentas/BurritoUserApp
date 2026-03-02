@@ -15,12 +15,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParams } from '../../../app/navigations/StackNavigator';
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
 import DeviceInfo from 'react-native-device-info';
+
 import database from '@react-native-firebase/database';
+import { firebaseDatabase } from '../../../shared/config/firebase'; 
 
 const AVATARES = [
-  { id: 'economista', label: 'ECONOMIA', url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' }, 
+  { id: 'economista', label: 'CIENCIAS ECONOMICAS', url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' }, 
   { id: 'ingeniero', label: 'INGENIERIA', url: require('../../../assets/INGENIERO.png'), color: '#FF5757' },    
-  { id: 'salud', label: 'SALUD', url: require('../../../assets/SALUD.png'), color: '#8C52FF' },   
+  { id: 'salud', label: 'CIENCIAS DE LA SALUD', url: require('../../../assets/SALUD.png'), color: '#8C52FF' },   
   { id: 'humanidades', label: 'HUMANIDADES', url: require('../../../assets/HUMANIDADES.png'), color: '#5CE1E6' }, 
 ];
 
@@ -30,14 +32,12 @@ export const LoginScreen = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState('');
   
-  // 🔥 SOLUCIÓN: Ya no extraemos setUsername ni setUid, solo usamos nuestra súper función 'login'
   const { login } = useUserStore();
 
   const sheetY = useSharedValue(screenHeight);
   const backdropOpacity = useSharedValue(0);
   const breathing = useSharedValue(1); 
 
-  // --- CÁLCULOS RESPONSIVOS ---
   const horizontalPadding = 20;
   const gap = 20;
   const avatarWrapperWidth = (screenWidth - (horizontalPadding * 2) - gap) / 2;
@@ -79,18 +79,17 @@ export const LoginScreen = () => {
         Keyboard.dismiss();
         const uniqueId = await DeviceInfo.getUniqueId();
         
-        await database().ref(`/usuarios/${uniqueId}`).set({
+        await firebaseDatabase.ref(`/usuarios/${uniqueId}`).update({
           nombre: name.trim(),
           avatar: selectedId,
           dispositivo: await DeviceInfo.getModel(),
-          ultimaConexion: new Date().toISOString()
+          ultimaConexion: database.ServerValue.TIMESTAMP 
         });
 
         backdropOpacity.value = withTiming(0, { duration: 250 });
         sheetY.value = withTiming(screenHeight, { duration: 250 });
 
         setTimeout(() => {
-          // 🔥 SOLUCIÓN: Enviamos todo de un solo golpe. El Store se encarga del resto (y de asignar el apodo)
           login(uniqueId, name.trim(), selectedId as AvatarId);
           navigation.replace('MainApp');
         }, 300); 

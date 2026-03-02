@@ -16,9 +16,9 @@ import { useDrawerStore } from '../../../store/drawerStore';
 import { Map } from '../components/Map';
 import { FAB } from '../components/FAB';
 import { CustomDrawer } from '../components/CustomDrawer'; 
+import { MapBranding } from '../components/MapBranding'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
-// 🔥 IMPORTAMOS LA LIBRERÍA DE HÁPTICA
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 import LinearGradient from 'react-native-linear-gradient';
@@ -61,12 +61,11 @@ export const MapScreen = () => {
     ? ['#121212', BURRITO_COLORS.darkPrimary] 
     : ['#FFFFFF', BURRITO_COLORS.primary];  
 
-  // 🔥 LÓGICA DE DOBLE VIBRACIÓN SUAVE PARA EL MENÚ
   const handleOpenDrawerWithHaptic = () => {
     ReactNativeHapticFeedback.trigger("soft", hapticOptions);
     setTimeout(() => {
       ReactNativeHapticFeedback.trigger("soft", hapticOptions);
-    }, 120); // Retraso de 120ms para simular el doble tick
+    }, 120); 
     openDrawer();
   };
 
@@ -82,6 +81,7 @@ export const MapScreen = () => {
         <Map burritoLocation={location} isDarkMode={isDarkMode} />
       </View>
 
+      {/* OVERLAY DE CARGA INICIAL */}
       {!hasInitialLoad && (
         <Animated.View 
           exiting={FadeOut.duration(600)} 
@@ -93,7 +93,7 @@ export const MapScreen = () => {
           >
             <View style={styles.loaderContent}>
               <ActivityIndicator size="large" color={BURRITO_COLORS.primary} style={{ marginBottom: 20 }} />
-              <Text style={[styles.loadingText, { color: isDarkMode ? '#FFFFFF' : '#FFFF' }]}>
+              <Text style={[styles.loadingText, { color: isDarkMode ? '#FFFFFF' : '#333' }]}>
                 Esperando al burrito...
               </Text>
               <Text style={[styles.subLoadingText, { color: isDarkMode ? '#A0A0A0' : '#666666' }]}>
@@ -104,8 +104,13 @@ export const MapScreen = () => {
         </Animated.View>
       )}
 
+      {/* CAPA DE INTERFAZ DE USUARIO */}
       {hasInitialLoad && (
         <View style={styles.uiLayer} pointerEvents="box-none">
+          
+          {/* 🔥 BRANDING: Flota en el centro superior, ignorando el flujo del menú */}
+          <MapBranding isDarkMode={isDarkMode} />
+
           <View 
             style={[
               styles.topBar, 
@@ -114,7 +119,7 @@ export const MapScreen = () => {
             pointerEvents="box-none"
           >
             <TouchableOpacity 
-              onPress={handleOpenDrawerWithHaptic} // 🔥 Usamos la nueva función con vibración
+              onPress={handleOpenDrawerWithHaptic} 
               activeOpacity={0.8} 
               style={styles.hamburgerButton}
             >
