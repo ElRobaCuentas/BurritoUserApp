@@ -12,7 +12,6 @@ const SANMARCOS_NICKNAMES: Record<AvatarId, string[]> = {
   economista: ['Inflacionado', 'PBI en Crecimiento', 'Riesgo País', 'Macro Mind'],
 };
 
-// 🔥 EXPORTAMOS LA INTERFAZ PARA USARLA EN EL STACK
 export interface UserState {
   uuid: string | null;
   username: string | null;
@@ -36,7 +35,6 @@ export const useUserStore = create<UserState>()(
       isLoggedIn: false, // Inicia desconectado
       _hasHydrated: false,
 
-      // Al loguearse, le asignamos su apodo aleatorio Y le damos el pase VIP
       login: (uuid, username, avatar) => {
         const nicknames = SANMARCOS_NICKNAMES[avatar];
         const randomNick = nicknames[Math.floor(Math.random() * nicknames.length)];
@@ -44,12 +42,10 @@ export const useUserStore = create<UserState>()(
         set({ uuid, username, avatar, nickname: randomNick, isLoggedIn: true });
       },
 
-      // Borramos todo al salir
       logout: () => {
         set({ uuid: null, username: null, avatar: null, nickname: null, isLoggedIn: false });
       },
 
-      // Si cambia de avatar en la app, lo volvemos a bautizar
       setAvatar: (avatar) => {
         const nicknames = SANMARCOS_NICKNAMES[avatar];
         const randomNick = nicknames[Math.floor(Math.random() * nicknames.length)];
@@ -62,7 +58,6 @@ export const useUserStore = create<UserState>()(
     {
       name: 'burrito-user-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      // 🔥 GUARDAMOS TODO (La llave de la puerta incluida)
       partialize: (state) => ({ 
         uuid: state.uuid, 
         username: state.username, 
@@ -70,7 +65,6 @@ export const useUserStore = create<UserState>()(
         nickname: state.nickname,
         isLoggedIn: state.isLoggedIn 
       }),
-      // 🔥 MANEJO DE ERRORES: Para evitar el "Splash Infinito"
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           console.error("Error al leer el disco duro:", error);
