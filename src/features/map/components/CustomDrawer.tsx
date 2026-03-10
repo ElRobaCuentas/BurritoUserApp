@@ -149,7 +149,7 @@ export const CustomDrawer = () => {
       <Animated.View style={[styles.drawerContainer, { backgroundColor: theme.bg }, animatedDrawerStyle]}>
         
         <LinearGradient colors={theme.headerGradient} style={styles.header}>
-          <Text style={styles.brandText}>EL BURRITO - UNMSM</Text>
+          <Text style={styles.brandText}>EL BURRITO</Text>
         </LinearGradient>
 
         <View style={styles.avatarWrapper}>

@@ -1,19 +1,16 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image, Text } from 'react-native';
 import Animated, { 
-  FadeInRight, 
   useSharedValue, 
   useAnimatedStyle, 
   withTiming, 
   withDelay, 
   withSequence,
   runOnJS, 
-  Easing
+  Easing,
+  FadeIn
 } from 'react-native-reanimated';
 import BootSplash from 'react-native-bootsplash';
-
-const WORD = ["U", "R", "R", "I", "T", "O"];
-const FONT_NAME = 'algerian'; 
 
 export const AnimatedSplash = ({ onFinish }: { onFinish: () => void }) => {
   const containerScale = useSharedValue(1);
@@ -21,22 +18,17 @@ export const AnimatedSplash = ({ onFinish }: { onFinish: () => void }) => {
 
   useEffect(() => {
     BootSplash.hide({ fade: false });
-
-    // 🔥 TIEMPOS PSICOLÓGICOS PERFECTOS
-    // Esperamos 1.4 segundos exactos (0.6s escribiendo + 0.8s estático para lectura)
+    
     containerScale.value = withDelay(
-      1400,
+      1500,
       withSequence(
-        // Anticipación breve (250ms)
         withTiming(0.85, { duration: 250, easing: Easing.out(Easing.ease) }), 
-        // Explosión de zoom in hacia el usuario (500ms)
         withTiming(30, { duration: 500, easing: Easing.in(Easing.poly(4)) }) 
       )
     );
 
-    // Desvanecimiento sincronizado con la explosión
     containerOpacity.value = withDelay(
-      1700, // Comienza a desaparecer cuando ya está volando hacia la cámara
+      1800,
       withTiming(0, { duration: 250 }, (finished) => {
         if (finished) {
           runOnJS(onFinish)();
@@ -45,33 +37,33 @@ export const AnimatedSplash = ({ onFinish }: { onFinish: () => void }) => {
     );
   }, []);
 
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: containerScale.value }],
-      opacity: containerOpacity.value,
-    };
-  });
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: containerScale.value }],
+    opacity: containerOpacity.value,
+  }));
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.row, animatedContainerStyle]}>
-        
-        <Animated.Text style={styles.letterB}>B</Animated.Text>
-        
-        {WORD.map((char, index) => (
-          <Animated.Text
-            key={index}
-            // Entran rapidito (80ms entre letras) para no aburrir
-            entering={FadeInRight.delay(100 + index * 80)
-              .duration(400)
-              .springify()
-              .damping(14)} 
-            style={styles.letter}
-          >
-            {char}
-          </Animated.Text>
-        ))}
+      {/* 1. LOGO PRINCIPAL */}
+      <Animated.View style={[styles.centerWrapper, animatedContainerStyle]}>
+        <Image 
+          source={require('../../../assets/logo_app.png')} 
+          style={styles.logoApp}
+          resizeMode="contain"
+        />
+      </Animated.View>
 
+      <Animated.View entering={FadeIn.delay(500)} style={styles.whatsappFooter}>
+        <Text style={styles.fromText}>from</Text>
+        
+        <View style={styles.metaRow}>
+          <Image 
+            source={require('../../../assets/logo_marca.png')} 
+            style={styles.metaLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.metaText}>SYTHOR</Text>
+        </View>
       </Animated.View>
     </View>
   );
@@ -80,29 +72,45 @@ export const AnimatedSplash = ({ onFinish }: { onFinish: () => void }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#00AEEF', 
+    backgroundColor: '#00AEEF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'baseline', 
+  centerWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  letterB: {
-    fontSize: 70,
-    fontFamily: FONT_NAME,
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0,0,0,0.15)', 
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+  logoApp: {
+    width: 220,
+    height: 220,
   },
-  letter: {
-    fontSize: 60,
-    fontFamily: FONT_NAME,
+  whatsappFooter: {
+    position: 'absolute',
+    bottom: 40,
+    width: '100%', 
+    alignItems: 'center', 
+  },
+  fromText: {
+  color: '#E2E8F0',
+  fontSize: 14,
+  marginBottom: 4,
+  textAlign: 'center',
+  width: '100%',
+},
+  metaRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+  metaLogo: {
+    width: 26,
+    height: 26,
+    marginRight: 6,
+  },
+  metaText: {
     color: '#FFFFFF',
-    marginLeft: 2,
-    textShadowColor: 'rgba(0,0,0,0.15)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    fontSize: 24,
+    fontWeight: 'bold', 
+    letterSpacing: 6,
   },
 });
