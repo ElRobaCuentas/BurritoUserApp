@@ -11,36 +11,32 @@ interface MapBrandingProps {
   isDarkMode: boolean;
 }
 
-// ✅ Configuración de los 3 estados en un solo lugar.
-// Si quieres cambiar un texto o color, solo tocas aquí.
+// Config de los 3 estados del badge de abajo.
+// El pill (B + punto) no cambia por dentro, sigue igual que siempre.
 const SIGNAL_CONFIG = {
-  stable: {
-    dotColor: '#4CAF50',   // verde
-    label: 'EN SERVICIO',
-    labelColor: '#4CAF50',
-  },
-  weak: {
-    dotColor: '#4CAF50',   // verde — aún recibe datos, no alarmamos al estudiante
-    label: 'SEÑAL DÉBIL',
-    labelColor: '#FF9800', // naranja para el texto — aviso sutil
-  },
-  lost: {
-    dotColor: '#FF5252',   // rojo
-    label: 'SIN SEÑAL',
-    labelColor: '#FF5252',
-  },
+  stable: { label: 'EN SERVICIO', bgColor: '#4CAF50' },
+  weak:   { label: 'SEÑAL DÉBIL', bgColor: '#FF9800' },
+  lost:   { label: 'SIN SEÑAL',   bgColor: '#FF5252' },
 };
 
 export const MapBranding = ({ isDarkMode }: MapBrandingProps) => {
   const insets = useSafeAreaInsets();
-  // ✅ Lee busSignalStatus en lugar del booleano isBusOnline
   const busSignalStatus = useBurritoStore((state) => state.busSignalStatus);
+  const location = useBurritoStore((state) => state.location);
 
-  const config = SIGNAL_CONFIG[busSignalStatus];
+  // Si el conductor apagó el bus, el badge muestra "SIN SEÑAL" rojo.
+  // El mensaje "BURRITO DESCANSANDO" vive en MapScreen, no aquí.
+  const isBusOff = location?.isActive === false;
+  const config = isBusOff ? SIGNAL_CONFIG.lost : SIGNAL_CONFIG[busSignalStatus];
 
   const gradientColors = isDarkMode
     ? ['rgba(30, 30, 30, 0.95)', COLORS.primary + '10']
     : ['#FFFFFF', COLORS.primary + '30'];
+
+  // El punto verde/rojo del pill sigue su lógica original
+  const dotColor = (busSignalStatus === 'stable' || busSignalStatus === 'weak') && !isBusOff
+    ? '#4CAF50'
+    : '#FF5252';
 
   return (
     <Animated.View
@@ -50,6 +46,7 @@ export const MapBranding = ({ isDarkMode }: MapBrandingProps) => {
         { top: Platform.OS === 'android' ? insets.top + 15 : insets.top + 10 }
       ]}
     >
+      {/* ── PILL ORIGINAL (B + punto) ── sin cambios internos ── */}
       <LinearGradient
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
@@ -59,17 +56,13 @@ export const MapBranding = ({ isDarkMode }: MapBrandingProps) => {
         <Text style={[styles.brandText, { color: COLORS.primary }]}>
           B
         </Text>
-
-        <View style={styles.rightSection}>
-          {/* Punto de estado — igual que antes pero ahora usa config */}
-          <View style={[styles.statusDot, { backgroundColor: config.dotColor }]} />
-
-          {/* ✅ NUEVO: Texto pequeño debajo del punto */}
-          <Text style={[styles.statusLabel, { color: config.labelColor }]}>
-            {config.label}
-          </Text>
-        </View>
+        <View style={[styles.statusDot, { backgroundColor: dotColor }]} />
       </LinearGradient>
+
+      {/* ── BADGE DE ESTADO: flota DEBAJO del pill, mismo ancho ── */}
+      <View style={[styles.statusBadge, { backgroundColor: config.bgColor }]}>
+        <Text style={styles.statusLabel}>{config.label}</Text>
+      </View>
     </Animated.View>
   );
 };
@@ -79,6 +72,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     zIndex: 10,
+    alignItems: 'center',
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
       android: { elevation: 6 }
@@ -101,26 +95,30 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
-  // ✅ NUEVO: columna que agrupa el punto y el texto
-  rightSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    marginTop: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
-  // ✅ NUEVO: texto de estado pequeño debajo del punto
+  // Badge debajo del pill, se estira al mismo ancho automáticamente
+  statusBadge: {
+    marginTop: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
   statusLabel: {
     fontSize: 7,
     fontFamily: TYPOGRAPHY.primary.bold,
-    letterSpacing: 0.5,
-    marginTop: 2,
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
 });

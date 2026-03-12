@@ -6,7 +6,6 @@ import { PARADEROS, RUTA_GEOJSON } from '../constants/map_route';
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
-// ✅ CAMBIO 1: Importamos el store del bus para leer el estado de la señal
 import { useBurritoStore } from '../../../store/burritoLocationStore'; 
 import Reanimated, { FadeInDown, FadeOutDown, Easing, cancelAnimation } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
@@ -60,8 +59,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const cameraRef = useRef<Mapbox.Camera>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const { isFollowing, setIsFollowing, command, setCommand } = useMapStore();
-  
-  // ✅ CAMBIO 2: Leemos la "única fuente de la verdad" del store
   const busSignalStatus = useBurritoStore((state) => state.busSignalStatus);
   
   const [isMapReady, setIsMapReady] = useState(false);
@@ -69,9 +66,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const [isFirstBusLoad, setIsFirstBusLoad] = useState(true);
 
   const [radarStatus, setRadarStatus] = useState<RadarStatus>('active');
-
-  // ✅ CAMBIO 3: ELIMINAMOS los useRef huérfanos y timers manuales de "offlineTimer" o "stationaryTimer".
-  // Ya no hacen falta. Todo viene derivado del `busSignalStatus`.
 
   const latAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[1])).current;
   const lngAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[0])).current;
@@ -85,7 +79,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
 
   useEffect(() => {
     return () => {
-      // ✅ CAMBIO 4: Limpiamos únicamente la animación, ya no hay timeouts que limpiar
       radarAnimValue.stopAnimation();
     };
   }, []);
@@ -128,28 +121,20 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     };
   }, [radarStatus]);
 
-  // ✅ CAMBIO 5: Lógica separada y limpia para el Color/Estado del Radar
   useEffect(() => {
     if (!burritoLocation) return;
 
-    // Si el chofer apagó el bus manualmente o se superaron los 10 segundos sin señal -> Radar ROJO
     if (burritoLocation.isActive === false || busSignalStatus === 'lost') {
       setRadarStatus('offline');
-    } 
-    // Si la señal es estable/débil pero el bus va a < 7km/h -> Radar NARANJA
-    else if (burritoLocation.speed !== undefined && burritoLocation.speed < 2) {
+    } else if (burritoLocation.speed !== undefined && burritoLocation.speed < 2) {
       setRadarStatus('stationary');
-    } 
-    // Todo bien y moviéndose -> Radar AZUL
-    else {
+    } else {
       setRadarStatus('active');
     }
   }, [burritoLocation, busSignalStatus]);
 
-  // ✅ CAMBIO 6: Lógica para el Movimiento (Interpolación a la polilínea)
   useEffect(() => {
     if (burritoLocation) {
-      // Si el chofer detuvo el bus, simplemente no hacemos nada (se queda en la posición actual hasta que desaparezca)
       if (burritoLocation.isActive === false) return; 
 
       const snappedCoords = snapToRoute(burritoLocation.latitude, burritoLocation.longitude);
@@ -193,10 +178,7 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
         zoomLevel: UNMSM_STATIC_VIEW.zoom,
         animationDuration: 0, 
       });
-
-      setTimeout(() => {
-        setBoundsActive(true);
-      }, 800);
+      setTimeout(() => { setBoundsActive(true); }, 800);
     }
   }, [isMapReady]);
 
@@ -210,9 +192,12 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
       });
       setIsFollowing(false); 
       setCommand(null);
-    } else if (command === 'follow' && burritoLocation) {
+    } else if (command === 'follow' && currentPos) {
+      // ✅ FIX RAÍZ: usamos currentPos (snapeado + animado) en lugar de
+      // burritoLocation.longitude/latitude (coordenada cruda de Firebase).
+      // currentPos es exactamente donde está el ícono del bus en pantalla.
       cameraRef.current?.setCamera({ 
-        centerCoordinate: [burritoLocation.longitude, burritoLocation.latitude], 
+        centerCoordinate: currentPos as [number, number],
         zoomLevel: 17.5, 
         animationDuration: 2000, 
         animationMode: 'flyTo' 
@@ -220,18 +205,20 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
       setIsFollowing(true); 
       setCommand(null);
     }
-  }, [command, burritoLocation]);
+  }, [command, currentPos]);
 
+  // ✅ FIX RAÍZ: seguimiento continuo también usa currentPos, no burritoLocation.
+  // Además respeta la guarda isActive para no seguir coordenadas de un bus apagado.
   useEffect(() => {
-    if (isFollowing && burritoLocation) {
+    if (isFollowing && currentPos && burritoLocation?.isActive !== false) {
       cameraRef.current?.setCamera({ 
-        centerCoordinate: [burritoLocation.longitude, burritoLocation.latitude], 
+        centerCoordinate: currentPos as [number, number],
         zoomLevel: 17.5, 
         animationDuration: 3000, 
         animationMode: 'linearTo' 
       }); 
     }
-  }, [burritoLocation, isFollowing]);
+  }, [currentPos, isFollowing]);
 
   const selectedStop = useMemo(() => PARADEROS.find(p => p.id === selectedStopId), [selectedStopId]);
   const currentStopTheme = isDarkMode ? STOP_COLORS.dark : STOP_COLORS.light;
@@ -246,10 +233,8 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     radarBgColor = 'rgba(244, 67, 54, 0.35)';
   }
 
-  // ✅ CAMBIO 7: RESOLVEMOS EL BUS FANTASMA (Ocultar el ícono bajo condiciones estrictas)
-  // ¿Cuándo ocultamos el bus de la pantalla del alumno?
-  // -> SOLO cuando pasaron >10s sin señal ('lost') Y el conductor apagó la app (isActive: false).
-  const showBusOnMap = burritoLocation && !(busSignalStatus === 'lost' && burritoLocation.isActive === false);
+  // Bus desaparece inmediatamente cuando isActive es false (corrección Gemini)
+  const showBusOnMap = burritoLocation && burritoLocation.isActive !== false;
 
   return (
     <View style={styles.container}>
@@ -281,7 +266,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           />
         </Mapbox.ShapeSource>
 
-        {/* ✅ CAMBIO 8: Condicionamos el pintado del Radar y del Icono con `showBusOnMap` */}
         {showBusOnMap && currentPos && (
           <Mapbox.ShapeSource id="radarSource" shape={busShape as any}>
             <Mapbox.CircleLayer
@@ -325,7 +309,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           </Mapbox.MarkerView>
         ))}
 
-        {/* ✅ CAMBIO 8 (Cont.): Aplicamos la condición aquí también para ocultar la imagen del bus */}
         {showBusOnMap && busShape && (
           <Mapbox.ShapeSource id="busSource" shape={busShape as any}>
             <Mapbox.SymbolLayer 

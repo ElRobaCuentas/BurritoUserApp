@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  TouchableOpacity, 
-  StatusBar, 
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  StatusBar,
   Platform,
   Text,
-  ActivityIndicator 
+  ActivityIndicator
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBurritoStore } from '../../../store/burritoLocationStore';
 import { useThemeStore } from '../../../store/themeStore';
-import { useMapStore } from '../../../store/mapStore'; 
-import { useDrawerStore } from '../../../store/drawerStore'; 
+import { useMapStore } from '../../../store/mapStore';
+import { useDrawerStore } from '../../../store/drawerStore';
 import { Map } from '../components/Map';
 import { FAB } from '../components/FAB';
-import { CustomDrawer } from '../components/CustomDrawer'; 
-import { MapBranding } from '../components/MapBranding'; 
+import { CustomDrawer } from '../components/CustomDrawer';
+import { MapBranding } from '../components/MapBranding';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
@@ -31,15 +31,15 @@ const hapticOptions = {
 
 const BURRITO_COLORS = {
   primary: '#00AEEF',
-  darkPrimary: '#005D8C', 
+  darkPrimary: '#005D8C',
 };
 
 export const MapScreen = () => {
-  const { location, actions } = useBurritoStore(); 
+  const { location, actions } = useBurritoStore();
   const { isDarkMode } = useThemeStore();
-  const { isFollowing, setCommand } = useMapStore(); 
+  const { isFollowing, setCommand } = useMapStore();
   const { openDrawer } = useDrawerStore();
-  
+
   const insets = useSafeAreaInsets();
 
   const [minTimeReached, setMinTimeReached] = useState(false);
@@ -57,38 +57,41 @@ export const MapScreen = () => {
     }
   }, [location, minTimeReached]);
 
-  const loadingGradient = isDarkMode 
-    ? ['#121212', BURRITO_COLORS.darkPrimary] 
-    : ['#FFFFFF', BURRITO_COLORS.primary];  
+  const loadingGradient = isDarkMode
+    ? ['#121212', BURRITO_COLORS.darkPrimary]
+    : ['#FFFFFF', BURRITO_COLORS.primary];
 
   const handleOpenDrawerWithHaptic = () => {
     ReactNativeHapticFeedback.trigger("soft", hapticOptions);
     setTimeout(() => {
       ReactNativeHapticFeedback.trigger("soft", hapticOptions);
-    }, 120); 
+    }, 120);
     openDrawer();
   };
 
+  // ✅ El bus está activo solo cuando existe location Y isActive no es false explícitamente
+  const isBusActive = !!location && location.isActive !== false;
+  const isBusResting = location?.isActive === false;
+
   return (
     <View style={styles.container}>
-      <StatusBar 
-        translucent 
-        backgroundColor="transparent" 
-        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
       />
-      
+
       <View style={styles.mapWrapper}>
         <Map burritoLocation={location} isDarkMode={isDarkMode} />
       </View>
 
-      {/* OVERLAY DE CARGA INICIAL */}
       {!hasInitialLoad && (
-        <Animated.View 
-          exiting={FadeOut.duration(600)} 
+        <Animated.View
+          exiting={FadeOut.duration(600)}
           style={styles.loadingOverlay}
         >
-          <LinearGradient 
-            colors={loadingGradient} 
+          <LinearGradient
+            colors={loadingGradient}
             style={styles.gradientWrapper}
           >
             <View style={styles.loaderContent}>
@@ -104,34 +107,44 @@ export const MapScreen = () => {
         </Animated.View>
       )}
 
-      {/* CAPA DE INTERFAZ DE USUARIO */}
       {hasInitialLoad && (
         <View style={styles.uiLayer} pointerEvents="box-none">
-          
-          {/* 🔥 BRANDING: Flota en el centro superior, ignorando el flujo del menú */}
+
           <MapBranding isDarkMode={isDarkMode} />
 
-          <View 
+          <View
             style={[
-              styles.topBar, 
+              styles.topBar,
               { paddingTop: Platform.OS === 'android' ? insets.top + 10 : insets.top + 5 }
-            ]} 
+            ]}
             pointerEvents="box-none"
           >
-            <TouchableOpacity 
-              onPress={handleOpenDrawerWithHaptic} 
-              activeOpacity={0.8} 
+            <TouchableOpacity
+              onPress={handleOpenDrawerWithHaptic}
+              activeOpacity={0.8}
               style={styles.hamburgerButton}
             >
               <Icon name="menu" size={28} color="#333" />
             </TouchableOpacity>
+
+            {isBusResting && (
+              <View style={styles.restingBadgeWrapper} pointerEvents="none">
+                <View style={styles.restingBadge}>
+                  <Text style={styles.restingText}> BURRITO DESCANSANDO ZZZ</Text>
+                </View>
+              </View>
+            )}
           </View>
 
           <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: insets.bottom }} pointerEvents="box-none">
-            <FAB 
-              isFollowingBus={isFollowing} 
-              onFollowBus={() => setCommand('follow')} 
-              onCenterMap={() => setCommand('center')} 
+            <FAB
+              isFollowingBus={isFollowing}
+              onFollowBus={() => setCommand('follow')}
+              onCenterMap={() => setCommand('center')}
+              // ✅ Le decimos al FAB si el bus está vivo para habilitar/deshabilitar
+              // el botón de seguimiento. Sin esto, el botón mandaba a coordenadas
+              // incorrectas cuando el bus estaba apagado o aún no había cargado.
+              isBusActive={isBusActive}
             />
           </View>
         </View>
@@ -149,7 +162,7 @@ const styles = StyleSheet.create({
   mapWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 999, 
+    zIndex: 999,
   },
   gradientWrapper: {
     flex: 1,
@@ -176,22 +189,48 @@ const styles = StyleSheet.create({
   },
   uiLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
   drawerWrapper: { ...StyleSheet.absoluteFillObject, zIndex: 20 },
-  topBar: { 
-    paddingHorizontal: 20, 
+  topBar: {
+    paddingHorizontal: 20,
     flexDirection: 'row',
-    justifyContent: 'flex-start'
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   hamburgerButton: {
-    backgroundColor: 'white', 
-    width: 54, 
-    height: 54, 
-    borderRadius: 27, 
-    justifyContent: 'center', 
+    backgroundColor: 'white',
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.25, 
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
     shadowRadius: 6,
-  }
+  },
+  restingBadgeWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    paddingRight: 80,
+    paddingLeft: 10,
+  },
+  restingBadge: {
+    backgroundColor: '#1A1A2E',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  restingText: {
+    fontFamily: TYPOGRAPHY.primary.bold,
+    fontSize: 12,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
 });
