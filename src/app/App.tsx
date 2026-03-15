@@ -1,9 +1,11 @@
+// src/app/App.tsx
 import React, { useEffect, useState, useRef } from 'react'; 
 import { View, StyleSheet, StatusBar, AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import database from '@react-native-firebase/database';
+import auth from '@react-native-firebase/auth'; // 🔥 NUEVO: Importamos auth para el Watchdog
 
 //inicialización de Google Sign-In
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -50,6 +52,24 @@ const App = () => {
   useEffect(() => {
     loadThemeFromStorage();
   }, []);
+
+  // ── 🔥 NUEVO: FIREBASE WATCHDOG (Guillotina Instantánea) ──
+  // No bloquea el AnimatedSplash. Se ejecuta silenciosamente.
+  useEffect(() => {
+    const unsubscribe = auth().onAuthStateChanged((firebaseUser) => {
+      // Usamos .getState() para no causar re-renders innecesarios en App.tsx
+      const isLoggedIn = useUserStore.getState().isLoggedIn;
+      
+      // Si Zustand dice "estoy dentro", pero Firebase dice "token inválido/borrado"
+      if (isLoggedIn && !firebaseUser) {
+        console.log("Watchdog: Token de Firebase ausente. Limpiando estado...");
+        useUserStore.getState().logout();
+      }
+    });
+
+    return () => unsubscribe(); // El listener solo se crea 1 vez ✅
+  }, []);
+  // ─────────────────────────────────────────────────────────
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#00AEEF' }}>

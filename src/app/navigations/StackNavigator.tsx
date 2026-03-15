@@ -11,9 +11,7 @@ import { ForgotPasswordScreen } from '../../features/auth/screen/ForgotPasswordS
 import { SignInScreen } from '../../features/auth/screen/SignInScreen';
 import { SignUpScreen } from '../../features/auth/screen/SignUpScreen';
 
-// ─────────────────────────────────────────────
-// 🗺️  Mapa de rutas tipado
-// ─────────────────────────────────────────────
+
 export type RootStackParams = {
   // Auth
   WelcomeScreen:       undefined;
@@ -39,10 +37,8 @@ export const StackNavigator = () => {
       }}
     >
       {isLoggedIn ? (
-        // ── Usuario autenticado → App principal ──
         <Stack.Screen name="MainApp" component={DrawerNavigator} />
       ) : (
-        // ── Usuario no autenticado → Flujo de Auth ──
         <>
           <Stack.Screen name="WelcomeScreen"        component={WelcomeScreen} />
           <Stack.Screen name="SignInScreen"          component={SignInScreen} />
