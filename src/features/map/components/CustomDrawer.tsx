@@ -20,6 +20,7 @@ import { MapService } from '../services/map_service';
 import DeviceInfo from 'react-native-device-info';
 import { firebaseAuth } from '../../../shared/config/firebase';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import analytics from '@react-native-firebase/analytics'; // ← NUEVO
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.72;
@@ -122,6 +123,7 @@ export const CustomDrawer = () => {
     closeDrawer();
     setTimeout(async () => {
       try {
+        await analytics().logEvent('sesion_cerrada'); // ← NUEVO
         await firebaseAuth.signOut();
         const currentGoogleUser = GoogleSignin.getCurrentUser();
         if (currentGoogleUser) {
@@ -181,7 +183,10 @@ export const CustomDrawer = () => {
               <Switch 
                 style={{ marginTop: 5, transform: [{ scale: 0.8 }] }} 
                 value={isDarkMode} 
-                onValueChange={toggleTheme} 
+                onValueChange={() => {
+                  analytics().logEvent(!isDarkMode ? 'modo_oscuro_activado' : 'modo_claro_activado'); // ← NUEVO
+                  toggleTheme();
+                }} 
                 trackColor={{ false: '#D1D1D1', true: COLORS.primary }} 
                 thumbColor={isDarkMode ? COLORS.primary : '#f4f3f4'} 
               />
@@ -216,7 +221,11 @@ export const CustomDrawer = () => {
                   <TouchableOpacity
                     key={item.id}
                     style={styles.avatarOption}
-                    onPress={() => { setAvatar(item.id); setIsExpanding(false); }}
+                    onPress={() => { 
+                      analytics().logEvent('avatar_cambiado', { nueva_facultad: item.id }); // ← NUEVO
+                      setAvatar(item.id); 
+                      setIsExpanding(false); 
+                    }}
                   >
                     {/* ── Mini avatar: misma técnica de doble view ── */}
                     <View style={styles.smallAvatarShadow}>

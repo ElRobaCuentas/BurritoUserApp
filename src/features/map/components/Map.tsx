@@ -9,6 +9,7 @@ import { useMapStore } from '../../../store/mapStore';
 import { useBurritoStore } from '../../../store/burritoLocationStore'; 
 import Reanimated, { FadeInDown, FadeOutDown, Easing, cancelAnimation } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import analytics from '@react-native-firebase/analytics'; // ← NUEVO
 
 const hapticOptions = {
   enableVibrateFallback: true,
@@ -193,9 +194,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
       setIsFollowing(false); 
       setCommand(null);
     } else if (command === 'follow' && currentPos) {
-      // ✅ FIX RAÍZ: usamos currentPos (snapeado + animado) en lugar de
-      // burritoLocation.longitude/latitude (coordenada cruda de Firebase).
-      // currentPos es exactamente donde está el ícono del bus en pantalla.
       cameraRef.current?.setCamera({ 
         centerCoordinate: currentPos as [number, number],
         zoomLevel: 17.5, 
@@ -207,8 +205,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     }
   }, [command, currentPos]);
 
-  // ✅ FIX RAÍZ: seguimiento continuo también usa currentPos, no burritoLocation.
-  // Además respeta la guarda isActive para no seguir coordenadas de un bus apagado.
   useEffect(() => {
     if (isFollowing && currentPos && burritoLocation?.isActive !== false) {
       cameraRef.current?.setCamera({ 
@@ -233,7 +229,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     radarBgColor = 'rgba(244, 67, 54, 0.35)';
   }
 
-  // Bus desaparece inmediatamente cuando isActive es false (corrección Gemini)
   const showBusOnMap = burritoLocation && burritoLocation.isActive !== false;
 
   return (
@@ -293,6 +288,7 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
               activeOpacity={0.6}
               onPress={() => {
                 ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
+                analytics().logEvent('paradero_tocado', { nombre: p.name }); // ← NUEVO
                 setSelectedStopId(prev => prev === p.id ? null : p.id);
               }}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} 

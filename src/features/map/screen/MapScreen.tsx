@@ -13,6 +13,7 @@ import { useBurritoStore } from '../../../store/burritoLocationStore';
 import { useThemeStore } from '../../../store/themeStore';
 import { useMapStore } from '../../../store/mapStore';
 import { useDrawerStore } from '../../../store/drawerStore';
+import { useUserStore } from '../../../store/userStore'; // ← NUEVO para Analytics
 import { Map } from '../components/Map';
 import { FAB } from '../components/FAB';
 import { CustomDrawer } from '../components/CustomDrawer';
@@ -20,6 +21,7 @@ import { MapBranding } from '../components/MapBranding';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import analytics from '@react-native-firebase/analytics'; // ← NUEVO
 
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeOut } from 'react-native-reanimated';
@@ -48,6 +50,24 @@ export const MapScreen = () => {
   useEffect(() => {
     actions.startTracking();
     const timer = setTimeout(() => setMinTimeReached(true), 1500);
+
+    // ← NUEVO: Analytics Inicial
+    const initAnalytics = async () => {
+      try {
+        const uid = useUserStore.getState().uuid ?? 'anonimo';
+        const avatar = useUserStore.getState().avatar ?? 'desconocido';
+
+        await analytics().setUserId(uid);
+        await analytics().setUserProperty('facultad', avatar);
+        await analytics().logEvent('mapa_abierto', {
+          metodo_ingreso: 'auto_login'
+        });
+      } catch (error) {
+        console.log("Error en Analytics:", error);
+      }
+    };
+    initAnalytics();
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -69,7 +89,6 @@ export const MapScreen = () => {
     openDrawer();
   };
 
-  // ✅ El bus está activo solo cuando existe location Y isActive no es false explícitamente
   const isBusActive = !!location && location.isActive !== false;
   const isBusResting = location?.isActive === false;
 
@@ -139,11 +158,14 @@ export const MapScreen = () => {
           <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: insets.bottom }} pointerEvents="box-none">
             <FAB
               isFollowingBus={isFollowing}
-              onFollowBus={() => setCommand('follow')}
-              onCenterMap={() => setCommand('center')}
-              // ✅ Le decimos al FAB si el bus está vivo para habilitar/deshabilitar
-              // el botón de seguimiento. Sin esto, el botón mandaba a coordenadas
-              // incorrectas cuando el bus estaba apagado o aún no había cargado.
+              onFollowBus={() => {
+                analytics().logEvent('bus_seguido'); // ← NUEVO
+                setCommand('follow');
+              }}
+              onCenterMap={() => {
+                analytics().logEvent('mapa_centrado'); // ← NUEVO
+                setCommand('center');
+              }}
               isBusActive={isBusActive}
             />
           </View>

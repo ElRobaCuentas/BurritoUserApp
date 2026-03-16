@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import database from '@react-native-firebase/database';
+import analytics from '@react-native-firebase/analytics'; // ← NUEVO
 
 import { RootStackParams }                from '../../../app/navigations/StackNavigator';
 import { firebaseDatabase, firebaseAuth } from '../../../shared/config/firebase';
@@ -35,10 +36,10 @@ import { TYPOGRAPHY }                     from '../../../shared/theme/typography
 type NavProp = StackNavigationProp<RootStackParams, 'SignUpScreen'>;
 
 const AVATARES = [
-  { id: 'ingeniero',   label: 'INGENIERÍA',           url: require('../../../assets/INGENIERO.png'),  color: '#FF5757' },
-  { id: 'economista',  label: 'CIENCIAS ECONÓMICAS',  url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' },
+  { id: 'ingeniero',   label: 'INGENIERÍA',          url: require('../../../assets/INGENIERO.png'),  color: '#FF5757' },
+  { id: 'economista',  label: 'CIENCIAS ECONÓMICAS', url: require('../../../assets/ECONOMISTA.png'), color: '#FFBD59' },
   { id: 'salud',       label: 'CIENCIAS DE LA SALUD', url: require('../../../assets/SALUD.png'),      color: '#8C52FF' },
-  { id: 'humanidades', label: 'HUMANIDADES',           url: require('../../../assets/HUMANIDADES.png'),color: '#5CE1E6' },
+  { id: 'humanidades', label: 'HUMANIDADES',          url: require('../../../assets/HUMANIDADES.png'),color: '#5CE1E6' },
 ];
 
 export const SignUpScreen = () => {
@@ -93,6 +94,7 @@ export const SignUpScreen = () => {
         ultimaConexion: database.ServerValue.TIMESTAMP,
       });
 
+      await analytics().logEvent('sesion_email'); // ← NUEVO
       login(uid, username.trim(), selectedId as AvatarId, email.trim());
     } catch (error: any) {
       Alert.alert('Error al registrarse', mapFirebaseError(error.code));
@@ -105,52 +107,34 @@ export const SignUpScreen = () => {
   const handleGoogleRegister = async () => {
   setGoogleLoad(true);
   try {
-    console.log('🔵 [Google] Paso 1: Verificando Play Services...');
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-    
-    console.log('🔵 [Google] Paso 2: Abriendo selector de cuentas...');
     const userInfo = await GoogleSignin.signIn();
-    
-    console.log('🔵 [Google] Paso 3: userInfo recibido:', JSON.stringify(userInfo?.data));
-    const idToken = userInfo.data?.idToken;
+    const idToken  = userInfo.data?.idToken;
+    if (!idToken) throw new Error('No se obtuvo el token.');
 
-    if (!idToken) {
-      console.log('🔴 [Google] ERROR: No se obtuvo idToken');
-      throw new Error('No se obtuvo el token de Google.');
-    }
+    const googleCred = auth.GoogleAuthProvider.credential(idToken);
+    const result     = await firebaseAuth.signInWithCredential(googleCred);
+    const uid        = result.user.uid;
 
-    console.log('🔵 [Google] Paso 4: Creando credencial de Firebase...');
-    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-    
-    console.log('🔵 [Google] Paso 5: Autenticando en Firebase...');
-    const result = await firebaseAuth.signInWithCredential(googleCredential);
-    
-    console.log('🟢 [Google] Paso 6: Firebase OK, uid:', result.user.uid);
-    const uid = result.user.uid;
-
-    console.log('🔵 [Google] Paso 7: Leyendo datos de la DB...');
     const snapshot = await firebaseDatabase.ref(`/usuarios/${uid}`).once('value');
-    const data = snapshot.val();
-    console.log('🟢 [Google] Paso 8: data:', JSON.stringify(data));
+    const data     = snapshot.val();
 
     if (data?.avatar) {
       await firebaseDatabase.ref(`/usuarios/${uid}`).update({
         ultimaConexion: database.ServerValue.TIMESTAMP,
       });
+      await analytics().logEvent('sesion_google');
       login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '');
     } else {
       navigation.navigate('AvatarPickerScreen', {
         uid,
         displayName: result.user.displayName ?? 'Sanmarquino',
-        email: result.user.email ?? '',
+        email:       result.user.email ?? '',
       });
     }
   } catch (error: any) {
-    console.log('🔴 [Google] ERROR código:', error.code);
-    console.log('🔴 [Google] ERROR mensaje:', error.message);
-    console.log('🔴 [Google] ERROR completo:', JSON.stringify(error));
     if (error.code !== 'SIGN_IN_CANCELLED') {
-      Alert.alert('Error con Google', 'No se pudo iniciar sesión. Inténtalo de nuevo.');
+      Alert.alert('Error con Google', 'No se pudo completar el registro.');
     }
   } finally {
     setGoogleLoad(false);
