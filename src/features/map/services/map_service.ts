@@ -4,9 +4,11 @@ import database from '@react-native-firebase/database';
 
 interface FeedbackData {
   username: string;
-  avatar: string;
-  rating: number;
-  mensaje: string;
+  avatar:   string;
+  rating:   number;
+  mensaje:  string;
+  uid:      string;   // ← NUEVO
+  email:    string;   // ← NUEVO
 }
 
 const BURRITO_LOCATION_PATH = '/ubicacion_burrito';

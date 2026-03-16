@@ -66,7 +66,6 @@ export const SignInScreen = () => {
         ultimaConexion: database.ServerValue.TIMESTAMP,
       });
 
-      navigation.replace('MainApp');
     } catch (error: any) {
       const msg = mapFirebaseError(error.code);
       Alert.alert('Error al ingresar', msg);

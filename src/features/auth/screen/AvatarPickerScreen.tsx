@@ -104,7 +104,6 @@ export const AvatarPickerScreen = () => {
 
       backdropOpacity.value = withTiming(0, { duration: 200 });
       sheetY.value          = withTiming(screenHeight, { duration: 200 });
-      setTimeout(() => navigation.replace('MainApp'), 250);
     } catch {
       Alert.alert('Error', 'No se pudo guardar tu perfil. Inténtalo de nuevo.');
     } finally {

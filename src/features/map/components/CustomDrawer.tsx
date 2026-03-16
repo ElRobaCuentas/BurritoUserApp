@@ -42,7 +42,7 @@ const AVATAR_LIST: { id: AvatarId; label: string }[] = [
 
 export const CustomDrawer = () => {
   const { isOpen, closeDrawer } = useDrawerStore() as any;
-  const { username, avatar, setAvatar, logout, nickname } = useUserStore();
+const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserStore();
   const { isDarkMode, toggleTheme } = useThemeStore() as any; 
 
   const [isExpanding,   setIsExpanding]   = useState(false);
@@ -109,6 +109,8 @@ export const CustomDrawer = () => {
       avatar:   avatar   || 'Estudiante',
       rating,
       mensaje:  feedback,
+      uid:      uuid    || 'desconocido', 
+      email:    email   || 'sin correo',  
     });
     if (success) {
       Alert.alert('¡Enviado!', 'Tu opinión ha sido registrada con éxito.');

@@ -94,7 +94,6 @@ export const SignUpScreen = () => {
       });
 
       login(uid, username.trim(), selectedId as AvatarId, email.trim());
-      navigation.replace('MainApp');
     } catch (error: any) {
       Alert.alert('Error al registrarse', mapFirebaseError(error.code));
     } finally {
