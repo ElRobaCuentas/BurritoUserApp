@@ -18,8 +18,6 @@ import Animated, {
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
 import { MapService } from '../services/map_service';
 import DeviceInfo from 'react-native-device-info';
-
-// 🔥 NUEVO: importamos los motores de auth para cerrar sesión correctamente
 import { firebaseAuth } from '../../../shared/config/firebase';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
@@ -42,7 +40,7 @@ const AVATAR_LIST: { id: AvatarId; label: string }[] = [
 
 export const CustomDrawer = () => {
   const { isOpen, closeDrawer } = useDrawerStore() as any;
-const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserStore();
+  const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserStore();
   const { isDarkMode, toggleTheme } = useThemeStore() as any; 
 
   const [isExpanding,   setIsExpanding]   = useState(false);
@@ -55,7 +53,6 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
   const translateX      = useSharedValue(-DRAWER_WIDTH - 50); 
   const backdropOpacity = useSharedValue(0);
 
-  // Interceptor botón atrás de Android
   useEffect(() => {
     const onBackPress = () => {
       if (isOpen) { closeDrawer(); return true; }
@@ -65,12 +62,10 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
     return () => subscription.remove();
   }, [isOpen, closeDrawer]);
 
-  // Versión de la app
   useEffect(() => {
     setAppVersion(`v.${DeviceInfo.getVersion()}`);
   }, []);
 
-  // Animación del drawer
   useEffect(() => {
     if (isOpen) {
       translateX.value      = withSpring(0, { damping: 20, stiffness: 150, overshootClamping: true });
@@ -123,31 +118,22 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
     setIsSending(false);
   };
 
-  // ── 🔥 LOGOUT CORREGIDO ────────────────────────────────────────────────────
   const handleLogout = async () => {
     closeDrawer();
     setTimeout(async () => {
       try {
-        // 1. Cierra sesión en Firebase Auth (email/password y Google comparten esto)
         await firebaseAuth.signOut();
-
-        // 2. Cierra sesión en Google Sign-In para que la próxima vez
-        //    muestre el selector de cuentas en lugar de loguearse solo
         const currentGoogleUser = GoogleSignin.getCurrentUser();
         if (currentGoogleUser) {
           await GoogleSignin.signOut();
         }
       } catch (error) {
-        // Si algo falla en el signOut de Firebase/Google,
-        // igual limpiamos el estado local para no dejar al usuario trabado
         console.warn('Error en signOut:', error);
       } finally {
-        // 3. Siempre limpiamos el store local (Zustand + AsyncStorage)
         logout();
       }
     }, 200);
   };
-  // ──────────────────────────────────────────────────────────────────────────
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
@@ -161,13 +147,16 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
           <Text style={styles.brandText}>EL BURRITO</Text>
         </LinearGradient>
 
+        {/* ── AVATAR: view exterior para sombra, view interior para recorte ── */}
         <View style={styles.avatarWrapper}>
-          <View style={[styles.avatarContainer, { borderColor: theme.bg, backgroundColor: theme.card }]}>
-            {avatar && AVATAR_IMAGES[avatar] ? (
-              <Image source={AVATAR_IMAGES[avatar]} style={styles.avatarImage} />
-            ) : (
-              <Icon name="account" size={50} color={COLORS.primary} />
-            )}
+          <View style={[styles.avatarShadow, { borderColor: theme.bg }]}>
+            <View style={styles.avatarClip}>
+              {avatar && AVATAR_IMAGES[avatar] ? (
+                <Image source={AVATAR_IMAGES[avatar]} style={styles.avatarImage} />
+              ) : (
+                <Icon name="account" size={50} color={COLORS.primary} />
+              )}
+            </View>
           </View>
         </View>
 
@@ -181,6 +170,7 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
           </View>
         </View>
 
+        {/* ── CONTENIDO PRINCIPAL (sin logout) ── */}
         <View style={styles.content}>
           <View style={styles.bentoRow}>
             <View style={[styles.bentoCard, { backgroundColor: theme.card }]}>
@@ -228,8 +218,11 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
                     style={styles.avatarOption}
                     onPress={() => { setAvatar(item.id); setIsExpanding(false); }}
                   >
-                    <View style={styles.smallAvatarCircle}>
-                      <Image source={AVATAR_IMAGES[item.id]} style={styles.smallAvatarImg} />
+                    {/* ── Mini avatar: misma técnica de doble view ── */}
+                    <View style={styles.smallAvatarShadow}>
+                      <View style={styles.smallAvatarClip}>
+                        <Image source={AVATAR_IMAGES[item.id]} style={styles.smallAvatarImg} />
+                      </View>
                     </View>
                     <Text style={[styles.smallAvatarLabel, { color: theme.subText }]}>{item.label}</Text>
                   </TouchableOpacity>
@@ -237,8 +230,10 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
               </Animated.View>
             )}
           </Animated.View>
+        </View>
 
-          {/* 🔥 BOTÓN LOGOUT — ahora llama handleLogout */}
+        {/* ── FOOTER: cerrar sesión + versión al fondo ── */}
+        <View style={styles.footer}>
           <TouchableOpacity 
             style={[styles.logoutButton, { backgroundColor: isDarkMode ? 'rgba(255,82,82,0.05)' : '#FFF5F5' }]} 
             onPress={handleLogout}
@@ -250,9 +245,7 @@ const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserSt
               <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </View>
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.footer}>
           <Text style={[styles.versionText, { color: theme.subText }]}>{appVersion || 'Cargando...'}</Text>
         </View>
       </Animated.View>
@@ -322,42 +315,86 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 25, borderBottomRightRadius: 25, 
     overflow: 'hidden', position: 'absolute', left: 0, top: 0, bottom: 0,
   },
-  header:      { height: 160, paddingTop: 40, alignItems: 'center' },
-  brandText:   { color: 'white', fontSize: 14, fontFamily: TYPOGRAPHY.primary.bold, opacity: 0.9, letterSpacing: 2, marginTop: 18 },  
-  avatarWrapper:   { alignItems: 'center', marginTop: -50, marginBottom: 10 },
-  avatarContainer: { width: 100, height: 100, borderRadius: 50, borderWidth: 4, justifyContent: 'center', alignItems: 'center', elevation: 10 },
-  avatarImage:     { width: '100%', height: '100%', borderRadius: 50, resizeMode: 'cover' },
-  userInfo:        { alignItems: 'center', marginBottom: 25, paddingHorizontal: 10 },
-  userName:        { fontSize: 22, fontFamily: TYPOGRAPHY.primary.bold, textAlign: 'center' },
-  facultyBadge:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 6 },
-  facultyText:     { fontSize: 11, marginLeft: 5, fontFamily: TYPOGRAPHY.primary.bold, letterSpacing: 0.5 },
-  content:         { paddingHorizontal: 15, flex: 1, paddingBottom: 20 },
-  bentoRow:        { flexDirection: 'row', justifyContent: 'space-between' },
-  bentoCard:       { flex: 1, borderRadius: 18, padding: 15, elevation: 2, alignItems: 'center', marginHorizontal: 4 },
-  bentoTitle:      { fontFamily: TYPOGRAPHY.primary.bold, fontSize: 13 },
-  bentoSubtitle:   { fontFamily: TYPOGRAPHY.primary.semiBold, fontSize: 10 },
-  menuCard:        { borderRadius: 18, paddingHorizontal: 12, paddingVertical: 5, elevation: 2, overflow: 'hidden' },
-  menuItemSpace:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
-  row:             { flexDirection: 'row', alignItems: 'center' },
-  iconCircle:      { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuText:        { marginLeft: 12, fontSize: 15, fontFamily: TYPOGRAPHY.primary.semiBold },
+  header:    { height: 160, paddingTop: 40, alignItems: 'center' },
+  brandText: { color: 'white', fontSize: 14, fontFamily: TYPOGRAPHY.primary.bold, opacity: 0.9, letterSpacing: 2, marginTop: 18 },  
+  
+  // ── Avatar principal: sombra separada del recorte ──
+  avatarWrapper:  { alignItems: 'center', marginTop: -50, marginBottom: 10 },
+  avatarShadow: {
+    width: 100, height: 100, borderRadius: 50,
+    borderWidth: 4,
+    elevation: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3, shadowRadius: 10,
+  },
+  avatarClip: {
+    width: '100%', height: '100%',
+    borderRadius: 50,
+    overflow: 'hidden',       // ← el recorte real
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0',
+  },
+  avatarImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+
+  userInfo:     { alignItems: 'center', marginBottom: 25, paddingHorizontal: 10 },
+  userName:     { fontSize: 22, fontFamily: TYPOGRAPHY.primary.bold, textAlign: 'center' },
+  facultyBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 6 },
+  facultyText:  { fontSize: 11, marginLeft: 5, fontFamily: TYPOGRAPHY.primary.bold, letterSpacing: 0.5 },
+  
+  content:       { paddingHorizontal: 15, flex: 1, paddingBottom: 10 },
+  bentoRow:      { flexDirection: 'row', justifyContent: 'space-between' },
+  bentoCard:     { flex: 1, borderRadius: 18, padding: 15, elevation: 2, alignItems: 'center', marginHorizontal: 4 },
+  bentoTitle:    { fontFamily: TYPOGRAPHY.primary.bold, fontSize: 13 },
+  bentoSubtitle: { fontFamily: TYPOGRAPHY.primary.semiBold, fontSize: 10 },
+  menuCard:      { borderRadius: 18, paddingHorizontal: 12, paddingVertical: 5, elevation: 2, overflow: 'hidden' },
+  menuItemSpace: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  row:           { flexDirection: 'row', alignItems: 'center' },
+  iconCircle:    { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  menuText:      { marginLeft: 12, fontSize: 15, fontFamily: TYPOGRAPHY.primary.semiBold },
+  
   avatarSelectionRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 15, paddingHorizontal: 5, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
-  avatarOption:    { alignItems: 'center', width: '30%' },
-  smallAvatarCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: COLORS.primary + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 5, overflow: 'hidden' },
-  smallAvatarImg:  { width: '80%', height: '80%', resizeMode: 'contain' },
-  smallAvatarLabel:{ fontSize: 10, fontFamily: TYPOGRAPHY.primary.semiBold, textAlign: 'center' },
-  logoutButton:    { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 18, marginTop: 12 },
-  logoutText:      { marginLeft: 12, fontSize: 15, fontFamily: TYPOGRAPHY.primary.semiBold, color: '#FF5252' },
-  footer:          { padding: 20, alignItems: 'center' },
-  versionText:     { fontSize: 11, fontFamily: TYPOGRAPHY.primary.regular },
+  avatarOption:  { alignItems: 'center', width: '30%' },
+
+  // ── Mini avatar: misma técnica ──
+  smallAvatarShadow: {
+    width: 50, height: 50, borderRadius: 25,
+    elevation: 3,
+    marginBottom: 5,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15, shadowRadius: 4,
+  },
+  smallAvatarClip: {
+    width: '100%', height: '100%',
+    borderRadius: 25,
+    overflow: 'hidden',
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  smallAvatarImg:   { width: '100%', height: '100%', resizeMode: 'cover' },
+  smallAvatarLabel: { fontSize: 10, fontFamily: TYPOGRAPHY.primary.semiBold, textAlign: 'center' },
+
+  // ── Footer: logout + versión ──
+  footer: { 
+    paddingHorizontal: 15, paddingBottom: 20, paddingTop: 8,
+    alignItems: 'center',
+  },
+  logoutButton: { 
+    flexDirection: 'row', alignItems: 'center', 
+    padding: 14, borderRadius: 18, 
+    width: '100%', marginBottom: 12,
+  },
+  logoutText:   { marginLeft: 12, fontSize: 15, fontFamily: TYPOGRAPHY.primary.semiBold, color: '#FF5252' },
+  versionText:  { fontSize: 11, fontFamily: TYPOGRAPHY.primary.regular },
 
   // Modal de feedback
-  modalOverlay:      { flex: 1, justifyContent: 'flex-end' },
-  bottomSheet:       { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40, alignItems: 'center' },
-  sheetHandle:       { width: 40, height: 5, backgroundColor: '#E0E0E0', borderRadius: 3, marginBottom: 20 },
-  sheetTitle:        { fontSize: 20, fontFamily: TYPOGRAPHY.primary.bold, marginBottom: 16 },
-  starsRowModal:     { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  feedbackInputModal:{ width: '100%', borderRadius: 14, padding: 14, minHeight: 100, textAlignVertical: 'top', fontSize: 14, fontFamily: TYPOGRAPHY.primary.regular, marginBottom: 16 },
-  sendBtnModal:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', borderRadius: 14, paddingVertical: 15 },
-  sendBtnText:       { color: '#FFF', fontSize: 16, fontFamily: TYPOGRAPHY.primary.semiBold },
+  modalOverlay:       { flex: 1, justifyContent: 'flex-end' },
+  bottomSheet:        { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40, alignItems: 'center' },
+  sheetHandle:        { width: 40, height: 5, backgroundColor: '#E0E0E0', borderRadius: 3, marginBottom: 20 },
+  sheetTitle:         { fontSize: 20, fontFamily: TYPOGRAPHY.primary.bold, marginBottom: 16 },
+  starsRowModal:      { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  feedbackInputModal: { width: '100%', borderRadius: 14, padding: 14, minHeight: 100, textAlignVertical: 'top', fontSize: 14, fontFamily: TYPOGRAPHY.primary.regular, marginBottom: 16 },
+  sendBtnModal:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', borderRadius: 14, paddingVertical: 15 },
+  sendBtnText:        { color: '#FFF', fontSize: 16, fontFamily: TYPOGRAPHY.primary.semiBold },
 });

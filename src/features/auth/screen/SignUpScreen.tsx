@@ -103,41 +103,40 @@ export const SignUpScreen = () => {
 
   // ─── REGISTRO CON GOOGLE ──────────────────────────────────────────────────
   const handleGoogleRegister = async () => {
-    setGoogleLoad(true);
-    try {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      const userInfo = await GoogleSignin.signIn();
-      const idToken  = userInfo.data?.idToken;
-      if (!idToken) throw new Error('No se obtuvo el token.');
+  setGoogleLoad(true);
+  try {
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    const userInfo = await GoogleSignin.signIn();
+    const idToken  = userInfo.data?.idToken;
+    if (!idToken) throw new Error('No se obtuvo el token.');
 
-      const googleCred = auth.GoogleAuthProvider.credential(idToken);
-      const result     = await firebaseAuth.signInWithCredential(googleCred);
-      const uid        = result.user.uid;
+    const googleCred = auth.GoogleAuthProvider.credential(idToken);
+    const result     = await firebaseAuth.signInWithCredential(googleCred);
+    const uid        = result.user.uid;
 
-      const snapshot = await firebaseDatabase.ref(`/usuarios/${uid}`).once('value');
-      const data     = snapshot.val();
+    const snapshot = await firebaseDatabase.ref(`/usuarios/${uid}`).once('value');
+    const data     = snapshot.val();
 
-      if (data?.avatar) {
-        login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '');
-        await firebaseDatabase.ref(`/usuarios/${uid}`).update({
-          ultimaConexion: database.ServerValue.TIMESTAMP,
-        });
-        navigation.replace('MainApp');
-      } else {
-        navigation.navigate('AvatarPickerScreen', {
-          uid,
-          displayName: result.user.displayName ?? 'Sanmarquino',
-          email:       result.user.email ?? '',
-        });
-      }
-    } catch (error: any) {
-      if (error.code !== 'SIGN_IN_CANCELLED') {
-        Alert.alert('Error con Google', 'No se pudo completar el registro.');
-      }
-    } finally {
-      setGoogleLoad(false);
+    if (data?.avatar) {
+      await firebaseDatabase.ref(`/usuarios/${uid}`).update({
+        ultimaConexion: database.ServerValue.TIMESTAMP,
+      });
+      login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '');
+    } else {
+      navigation.navigate('AvatarPickerScreen', {
+        uid,
+        displayName: result.user.displayName ?? 'Sanmarquino',
+        email:       result.user.email ?? '',
+      });
     }
-  };
+  } catch (error: any) {
+    if (error.code !== 'SIGN_IN_CANCELLED') {
+      Alert.alert('Error con Google', 'No se pudo completar el registro.');
+    }
+  } finally {
+    setGoogleLoad(false);
+  }
+};
 
   // ─── RENDER ──────────────────────────────────────────────────────────────
   return (

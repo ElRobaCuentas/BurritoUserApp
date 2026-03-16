@@ -130,7 +130,7 @@ export const MapScreen = () => {
             {isBusResting && (
               <View style={styles.restingBadgeWrapper} pointerEvents="none">
                 <View style={styles.restingBadge}>
-                  <Text style={styles.restingText}> BURRITO DESCANSANDO ZZZ</Text>
+                  <Text style={styles.restingText}> BURRITO DESCANSANDO</Text>
                 </View>
               </View>
             )}

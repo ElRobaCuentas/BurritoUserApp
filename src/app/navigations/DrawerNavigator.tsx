@@ -5,6 +5,8 @@ import {
   DrawerItemList,
   DrawerItem,
 } from '@react-navigation/drawer';
+import { firebaseAuth } from '../../shared/config/firebase';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import {
   View,
   Text,
@@ -104,7 +106,14 @@ const CustomDrawerContent = (props: any) => {
             )}
             label="Cerrar Sesión"
             labelStyle={{ color: '#FF453A', fontWeight: '800', fontSize: 16 }}
-            onPress={() => logout()}
+            onPress={async () => {
+  try {
+    await firebaseAuth.signOut();
+    const currentGoogleUser = GoogleSignin.getCurrentUser();
+    if (currentGoogleUser) await GoogleSignin.signOut();
+  } catch {}
+  logout();
+}}
             style={{ borderRadius: 15, backgroundColor: isDarkMode ? '#301010' : '#FFF5F5' }}
           />
         </View>
