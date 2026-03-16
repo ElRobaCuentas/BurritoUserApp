@@ -78,32 +78,50 @@ export const SignInScreen = () => {
   const handleGoogleLogin = async () => {
   setGoogleLoad(true);
   try {
+    console.log('🔵 [Google] Paso 1: Verificando Play Services...');
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    
+    console.log('🔵 [Google] Paso 2: Abriendo selector de cuentas...');
     const userInfo = await GoogleSignin.signIn();
-    const idToken  = userInfo.data?.idToken;
+    
+    console.log('🔵 [Google] Paso 3: userInfo recibido:', JSON.stringify(userInfo?.data));
+    const idToken = userInfo.data?.idToken;
 
-    if (!idToken) throw new Error('No se obtuvo el token de Google.');
+    if (!idToken) {
+      console.log('🔴 [Google] ERROR: No se obtuvo idToken');
+      throw new Error('No se obtuvo el token de Google.');
+    }
 
+    console.log('🔵 [Google] Paso 4: Creando credencial de Firebase...');
     const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-    const result           = await firebaseAuth.signInWithCredential(googleCredential);
-    const uid              = result.user.uid;
+    
+    console.log('🔵 [Google] Paso 5: Autenticando en Firebase...');
+    const result = await firebaseAuth.signInWithCredential(googleCredential);
+    
+    console.log('🟢 [Google] Paso 6: Firebase OK, uid:', result.user.uid);
+    const uid = result.user.uid;
 
+    console.log('🔵 [Google] Paso 7: Leyendo datos de la DB...');
     const snapshot = await firebaseDatabase.ref(`/usuarios/${uid}`).once('value');
-    const data     = snapshot.val();
+    const data = snapshot.val();
+    console.log('🟢 [Google] Paso 8: data:', JSON.stringify(data));
 
     if (data?.avatar) {
-      login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '');
       await firebaseDatabase.ref(`/usuarios/${uid}`).update({
         ultimaConexion: database.ServerValue.TIMESTAMP,
       });
+      login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '');
     } else {
       navigation.navigate('AvatarPickerScreen', {
         uid,
         displayName: result.user.displayName ?? 'Sanmarquino',
-        email:       result.user.email ?? '',
+        email: result.user.email ?? '',
       });
     }
   } catch (error: any) {
+    console.log('🔴 [Google] ERROR código:', error.code);
+    console.log('🔴 [Google] ERROR mensaje:', error.message);
+    console.log('🔴 [Google] ERROR completo:', JSON.stringify(error));
     if (error.code !== 'SIGN_IN_CANCELLED') {
       Alert.alert('Error con Google', 'No se pudo iniciar sesión. Inténtalo de nuevo.');
     }

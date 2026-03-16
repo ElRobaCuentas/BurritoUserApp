@@ -44,6 +44,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "677410027288-5flearh8d4e40iqv4g2a6og5aolgbv5p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.burritouserapp",
+            "certificate_hash": "44194d4ea52280b1db0c5ead4644f2f2b608cb58"
+          }
+        },
+        {
           "client_id": "677410027288-umtgi4mafqd73jc5avmld9gejnu7e564.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
