@@ -9,14 +9,16 @@ import { useMapStore } from '../../../store/mapStore';
 import { useBurritoStore } from '../../../store/burritoLocationStore'; 
 import Reanimated, { FadeInDown, FadeOutDown, Easing, cancelAnimation } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
-import analytics from '@react-native-firebase/analytics'; // ← NUEVO
+import analytics from '@react-native-firebase/analytics';
+
+import { MAPBOX_PUBLIC_TOKEN } from '@env'; 
 
 const hapticOptions = {
   enableVibrateFallback: true,
   ignoreAndroidSystemSettings: false,
 };
 
-Mapbox.setAccessToken('pk.eyJ1IjoiZWxyb2JhY3VlbnRhcyIsImEiOiJjbWx4MDc1Y2gwanpoM2txMzd1Mzl6YjN6In0.9c9y92FLxw_MeIZaX4EdPQ'); 
+Mapbox.setAccessToken(MAPBOX_PUBLIC_TOKEN); 
 
 const UNMSM_STATIC_VIEW = { center: [-77.0830, -12.0575] as [number, number], zoom: 15.1 };
 

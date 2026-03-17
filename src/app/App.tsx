@@ -8,6 +8,7 @@ import database from '@react-native-firebase/database';
 import auth from '@react-native-firebase/auth';
 
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GOOGLE_WEB_CLIENT_ID } from '@env'; // ← NUEVO IMPORT SEGURO
 
 import { StackNavigator } from './navigations/StackNavigator';
 import { useUserStore } from '../store/userStore'; 
@@ -15,16 +16,15 @@ import { useThemeStore } from '../store/themeStore';
 import { AnimatedSplash } from './screen/AnimatedSplash';
 
 GoogleSignin.configure({
-  webClientId: '677410027288-l5heitld12behdgnqf69rgkav0c6kbvc.apps.googleusercontent.com',
+  webClientId: GOOGLE_WEB_CLIENT_ID,
   offlineAccess: true,
 });
 
-// ── Temas personalizados para eliminar el flash entre pantallas ──────────────
 const CustomLightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#00AEEF', // mismo color que el AnimatedSplash → flash invisible
+    background: '#00AEEF',
   },
 };
 
