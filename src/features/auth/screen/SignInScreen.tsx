@@ -21,12 +21,14 @@ import auth from '@react-native-firebase/auth';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import database from '@react-native-firebase/database';
 import analytics from '@react-native-firebase/analytics';
+import crashlytics from '@react-native-firebase/crashlytics';
 
 import { RootStackParams }                from '../../../app/navigations/StackNavigator';
 import { firebaseDatabase, firebaseAuth } from '../../../shared/config/firebase';
 import { useUserStore, AvatarId }         from '../../../store/userStore';
 import { COLORS }                         from '../../../shared/theme/colors';
 import { TYPOGRAPHY }                     from '../../../shared/theme/typography';
+
 
 type NavProp = StackNavigationProp<RootStackParams, 'SignInScreen'>;
 
@@ -83,6 +85,7 @@ export const SignInScreen = () => {
 
   // ─── LOGIN GOOGLE ─────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
+    crashlytics().crash();
     if (googleLoad) return; // FIX D: evita doble tap
     setGoogleLoad(true);
     try {

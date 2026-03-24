@@ -26,8 +26,8 @@ android {
         applicationId "com.sythor.burritoapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 2
+        versionName "1.1.0"
     }
 
     signingConfigs {
@@ -37,7 +37,6 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        // --- AQUÍ ESTÁ LA MAGIA QUE FALTABA ---
         release {
             if (project.hasProperty('MYAPP_RELEASE_STORE_FILE')) {
                 storeFile file(MYAPP_RELEASE_STORE_FILE)
@@ -53,9 +52,7 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Cambiado de signingConfigs.debug a signingConfigs.release
-            signingConfig signingConfigs.release 
-            
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
@@ -70,7 +67,7 @@ android {
 dependencies {
     implementation("com.facebook.react:react-android")
 
-    if (isHermesEnabled) { 
+    if (isHermesEnabled) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
@@ -78,3 +75,5 @@ dependencies {
 }
 
 apply plugin: "com.google.gms.google-services"
+// ← NUEVO: plugin de Crashlytics — debe ir DESPUÉS de google-services
+apply plugin: "com.google.firebase.crashlytics"
