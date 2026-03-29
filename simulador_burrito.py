@@ -6,7 +6,6 @@ import math
 DB_URL = 'https://burritounmsm-default-rtdb.firebaseio.com/'
 REF_PATH = 'ubicacion_burrito'
 
-# 🚀 IMITANDO LA APP CONDUCTOR (Envío cada 3 segundos exactos)
 VELOCIDAD_METROS_POR_SEGUNDO = 8.0 
 INTERVALO_ENVIO = 3.0  
 
@@ -78,7 +77,7 @@ def simular_profesional():
     bus_ref = db.reference(REF_PATH)
     indice_actual = 0
     distancia_acumulada_segmento = 0
-    ultimo_paradero_visitado = None  # ✨ LA MEMORIA DEL BUS
+    ultimo_paradero_visitado = None 
 
     while True:
         if indice_actual >= len(RUTA_BASE) - 1:
@@ -101,7 +100,6 @@ def simular_profesional():
         en_paradero = False
         for nombre, coord in PARADEROS.items():
             if calcular_distancia(curr_lat, curr_lon, coord[0], coord[1]) < 20: 
-                # ✨ COMPROBAMOS LA MEMORIA: ¿Ya paramos aquí recién?
                 if ultimo_paradero_visitado == nombre:
                     continue # Lo ignoramos y pasamos de largo
 
