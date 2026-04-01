@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { StyleSheet, View, Easing as RNEasing, Animated as RNAnimated, TouchableOpacity } from 'react-native'; 
+import { StyleSheet, View, Text, Easing as RNEasing, Animated as RNAnimated, TouchableOpacity } from 'react-native'; 
 import Mapbox from '@rnmapbox/maps';
 import { COLORS } from '../../../shared/theme/colors';
 import { PARADEROS, RUTA_GEOJSON } from '../constants/map_route';
@@ -80,6 +80,9 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const [radarOpacity, setRadarOpacity] = useState(0.85);
   const radarAnimValue = useRef(new RNAnimated.Value(0)).current;
 
+  // --- ESTADO PARA EL MONITOR DE CAMPO ---
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+
   useEffect(() => {
     return () => {
       radarAnimValue.stopAnimation();
@@ -140,19 +143,35 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     if (burritoLocation) {
       if (burritoLocation.isActive === false) return; 
 
-      const snappedCoords = snapToRoute(burritoLocation.latitude, burritoLocation.longitude);
+      const rawCoords = [burritoLocation.longitude, burritoLocation.latitude]; 
       
+      // --- PASO 1: REGISTRO VISUAL PARA EL MONITOR DE CAMPO ---
+      const timeStr = burritoLocation.timestamp ? String(burritoLocation.timestamp).slice(-6) : 'N/A';
+      const logMsg = `T:${timeStr} | L:${burritoLocation.latitude.toFixed(4)},${burritoLocation.longitude.toFixed(4)}`;
+      
+      setDebugLogs(prev => {
+        const newLogs = [logMsg, ...prev];
+        return newLogs.slice(0, 5); // Solo mantenemos los 5 más recientes
+      });
+
+      console.log(`📍 [GPS CRUDO] Lat: ${burritoLocation.latitude}, Lng: ${burritoLocation.longitude}, Vel: ${burritoLocation.speed}`);
+      console.log(`🕐 [TIMESTAMP] Edad del dato: ${Date.now() - (burritoLocation.timestamp || 0)}ms`);
+
       if (isFirstBusLoad) {
-        latAnim.setValue(snappedCoords[1]);
-        lngAnim.setValue(snappedCoords[0]);
-        setCurrentPos(snappedCoords);
+        latAnim.setValue(rawCoords[1]);
+        lngAnim.setValue(rawCoords[0]);
+        setCurrentPos(rawCoords);
         setCurrentHeading((burritoLocation.heading || 0) - 90);
         setIsFirstBusLoad(false); 
       } else {
+        latAnim.stopAnimation();
+        lngAnim.stopAnimation();
+
         RNAnimated.parallel([
-          RNAnimated.timing(latAnim, { toValue: snappedCoords[1], duration: 3000, easing: RNEasing.linear, useNativeDriver: false }),
-          RNAnimated.timing(lngAnim, { toValue: snappedCoords[0], duration: 3000, easing: RNEasing.linear, useNativeDriver: false }),
+          RNAnimated.timing(latAnim, { toValue: rawCoords[1], duration: 2000, easing: RNEasing.linear, useNativeDriver: false }),
+          RNAnimated.timing(lngAnim, { toValue: rawCoords[0], duration: 2000, easing: RNEasing.linear, useNativeDriver: false }),
         ]).start();
+        
         setCurrentHeading((burritoLocation.heading || 0) - 90);
       }
     }
@@ -235,6 +254,17 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
 
   return (
     <View style={styles.container}>
+      
+      {/* MONITOR DE CAMPO FLOTANTE */}
+      <View style={styles.debugPanel}>
+        <Text style={styles.debugTitle}>RADAR DE DATOS RAW</Text>
+        {debugLogs.map((log, index) => (
+          <Text key={index} style={styles.debugText}>
+             {index === 0 ? '▶ ' : '  '}{log}
+          </Text>
+        ))}
+      </View>
+
       <Mapbox.MapView
         style={styles.map} 
         scaleBarEnabled={false} 
@@ -355,5 +385,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3,
   }, 
-  cardWrapper: { position: 'absolute', bottom: 40, alignSelf: 'center', zIndex: 100, elevation: 10 }
+  cardWrapper: { position: 'absolute', bottom: 40, alignSelf: 'center', zIndex: 100, elevation: 10 },
+  
+  // ESTILOS DEL MONITOR DE CAMPO
+  debugPanel: {
+    position: 'absolute',
+    top: 50,
+    left: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 10,
+    borderRadius: 8,
+    zIndex: 999,
+    elevation: 10,
+    pointerEvents: 'none' // Para que no bloquee los toques en el mapa
+  },
+  debugTitle: { color: '#00FFFF', fontSize: 10, fontWeight: 'bold', marginBottom: 5 },
+  debugText: { color: '#00FF00', fontSize: 11, fontFamily: 'monospace' },
 });

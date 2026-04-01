@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { BurritoLocation } from '../features/map/types';
 import { MapService } from '../features/map/services/map_service';
 
+
 // < 7000ms  → 'stable' → dato fresco, bus enviando con normalidad
 // 7000-10000ms → 'weak' → 2-3 ciclos sin dato nuevo, algo falla
 // > 10000ms → 'lost'   → 3+ ciclos perdidos, conexión cortada
@@ -24,7 +25,8 @@ interface BurritoStoreState {
   }
 }
 
-export const useBurritoStore = create<BurritoStoreState>((set) => {
+// OJO AQUÍ: Agregué 'get' al lado de 'set'
+export const useBurritoStore = create<BurritoStoreState>((set, get) => {
   let stopBurritoLocationTracking: (() => void) | undefined;
   let onlineInterval: NodeJS.Timeout | undefined;
 
@@ -46,12 +48,23 @@ export const useBurritoStore = create<BurritoStoreState>((set) => {
 
         stopBurritoLocationTracking = MapService.subscribeToBusLocation((newLocation) => {
           const now = Date.now();
-          const busTime = newLocation?.timestamp || 0;
+          const newTimestamp = newLocation?.timestamp || 0;
+
+          // --- INICIO DEL FILTRO DE ADUANA ---
+          const currentTimestamp = get().location?.timestamp || 0;
+          
+          if (newTimestamp > 0 && currentTimestamp > 0 && newTimestamp <= currentTimestamp) {
+            // El dato es más viejo o igual al que ya tenemos en pantalla.
+            // Lo ignoramos haciendo un return para que no actualice el estado del mapa.
+            console.log("🛑 FILTRO: Dato viejo rechazado", newTimestamp);
+            return; 
+          }
+          // --- FIN DEL FILTRO DE ADUANA ---
 
           set({
             location: newLocation,
             isConnecting: false,
-            busSignalStatus: getSignalStatus(now - busTime)
+            busSignalStatus: getSignalStatus(now - newTimestamp)
           });
         });
 
