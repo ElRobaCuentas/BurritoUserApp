@@ -11,30 +11,26 @@ interface MapBrandingProps {
   isDarkMode: boolean;
 }
 
-// Config de los 3 estados del badge de abajo.
-const SIGNAL_CONFIG = {
-  stable: { label: 'EN SERVICIO', bgColor: '#4CAF50' },
-  weak:   { label: 'SEÑAL DÉBIL', bgColor: '#FF9800' },
-  lost:   { label: 'SIN SEÑAL',   bgColor: '#FF5252' },
+// Configuración de los 3 estados
+const MOVEMENT_CONFIG = {
+  moving:  { label: 'EN MOVIMIENTO', bgColor: '#4CAF50' }, // Verde
+  stopped: { label: 'EN PARADERO',   bgColor: '#FF9800' }, // Naranja
+  offline: { label: 'SIN SEÑAL',     bgColor: '#FF5252' }, // Rojo clásico
 };
 
 export const MapBranding = ({ isDarkMode }: MapBrandingProps) => {
   const insets = useSafeAreaInsets();
-  const busSignalStatus = useBurritoStore((state) => state.busSignalStatus);
-  const location = useBurritoStore((state) => state.location);
+  const busMovementStatus = useBurritoStore((state) => state.busMovementStatus);
 
-  // Si el conductor apagó el bus, el badge muestra "SIN SEÑAL" rojo.
-  // El mensaje "BURRITO DESCANSANDO" vive en MapScreen, no aquí.
-  const isBusOff = location?.isActive === false;
-  const config = isBusOff ? SIGNAL_CONFIG.lost : SIGNAL_CONFIG[busSignalStatus];
+  const config = MOVEMENT_CONFIG[busMovementStatus];
 
   const gradientColors = isDarkMode
     ? ['rgba(30, 30, 30, 0.95)', COLORS.primary + '10']
     : ['#FFFFFF', COLORS.primary + '30'];
 
-  const dotColor = (busSignalStatus === 'stable' || busSignalStatus === 'weak') && !isBusOff
-    ? '#4CAF50'
-    : '#FF5252';
+  const dotColor = 
+    busMovementStatus === 'moving' ? '#4CAF50' : 
+    busMovementStatus === 'stopped' ? '#FF9800' : '#FF5252';
 
   return (
     <Animated.View

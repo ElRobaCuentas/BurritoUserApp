@@ -7,7 +7,7 @@ import { StopCard } from './StopCard';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
 import { useBurritoStore } from '../../../store/burritoLocationStore'; 
-import Reanimated, { FadeInDown, FadeOutDown, Easing, cancelAnimation } from 'react-native-reanimated';
+import Reanimated, { FadeInDown, FadeOutDown, Easing } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import analytics from '@react-native-firebase/analytics';
 
@@ -56,19 +56,17 @@ const snapToRoute = (lat: number, lng: number) => {
   return closestPoint; 
 };
 
-type RadarStatus = 'active' | 'stationary' | 'offline';
-
 export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const cameraRef = useRef<Mapbox.Camera>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const { isFollowing, setIsFollowing, command, setCommand } = useMapStore();
-  const busSignalStatus = useBurritoStore((state) => state.busSignalStatus);
+  
+  // AHORA LEEMOS busMovementStatus
+  const busMovementStatus = useBurritoStore((state) => state.busMovementStatus);
   
   const [isMapReady, setIsMapReady] = useState(false);
   const [boundsActive, setBoundsActive] = useState(false);
   const [isFirstBusLoad, setIsFirstBusLoad] = useState(true);
-
-  const [radarStatus, setRadarStatus] = useState<RadarStatus>('active');
 
   const latAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[1])).current;
   const lngAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[0])).current;
@@ -80,7 +78,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const [radarOpacity, setRadarOpacity] = useState(0.85);
   const radarAnimValue = useRef(new RNAnimated.Value(0)).current;
 
-  // --- ESTADO PARA EL MONITOR DE CAMPO ---
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
 
   useEffect(() => {
@@ -90,6 +87,7 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   }, []);
 
   useEffect(() => {
+    // FIX DE TYPESCRIPT
     let timer: ReturnType<typeof setTimeout>;
     if (selectedStopId) {
       timer = setTimeout(() => setSelectedStopId(null), 5000); 
@@ -97,13 +95,14 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     return () => { if (timer) clearTimeout(timer); };
   }, [selectedStopId]);
 
+  // EL RADAR ESTÁ SINCRONIZADO AL MOVIMIENTO
   useEffect(() => {
     radarAnimValue.stopAnimation();
     radarAnimValue.setValue(0);
 
-    let duration = 1200; 
-    if (radarStatus === 'stationary') duration = 2500; 
-    if (radarStatus === 'offline') duration = 4000; 
+    if (busMovementStatus === 'offline') return;
+
+    let duration = busMovementStatus === 'stopped' ? 2500 : 1200; 
 
     const loop = RNAnimated.loop(
       RNAnimated.timing(radarAnimValue, {
@@ -125,42 +124,26 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
       loop.stop();
       radarAnimValue.removeListener(listenerId);
     };
-  }, [radarStatus]);
-
-  useEffect(() => {
-    if (!burritoLocation) return;
-
-    if (burritoLocation.isActive === false || busSignalStatus === 'lost') {
-      setRadarStatus('offline');
-    } else if (burritoLocation.speed !== undefined && burritoLocation.speed < 2) {
-      setRadarStatus('stationary');
-    } else {
-      setRadarStatus('active');
-    }
-  }, [burritoLocation, busSignalStatus]);
+  }, [busMovementStatus]);
 
   useEffect(() => {
     if (burritoLocation) {
       if (burritoLocation.isActive === false) return; 
 
-      const rawCoords = [burritoLocation.longitude, burritoLocation.latitude]; 
+      const snappedCoords = snapToRoute(burritoLocation.latitude, burritoLocation.longitude);
       
-      // --- PASO 1: REGISTRO VISUAL PARA EL MONITOR DE CAMPO ---
       const timeStr = burritoLocation.timestamp ? String(burritoLocation.timestamp).slice(-6) : 'N/A';
       const logMsg = `T:${timeStr} | L:${burritoLocation.latitude.toFixed(4)},${burritoLocation.longitude.toFixed(4)}`;
       
       setDebugLogs(prev => {
         const newLogs = [logMsg, ...prev];
-        return newLogs.slice(0, 5); // Solo mantenemos los 5 más recientes
+        return newLogs.slice(0, 5);
       });
 
-      console.log(`📍 [GPS CRUDO] Lat: ${burritoLocation.latitude}, Lng: ${burritoLocation.longitude}, Vel: ${burritoLocation.speed}`);
-      console.log(`🕐 [TIMESTAMP] Edad del dato: ${Date.now() - (burritoLocation.timestamp || 0)}ms`);
-
       if (isFirstBusLoad) {
-        latAnim.setValue(rawCoords[1]);
-        lngAnim.setValue(rawCoords[0]);
-        setCurrentPos(rawCoords);
+        latAnim.setValue(snappedCoords[1]);
+        lngAnim.setValue(snappedCoords[0]);
+        setCurrentPos(snappedCoords);
         setCurrentHeading((burritoLocation.heading || 0) - 90);
         setIsFirstBusLoad(false); 
       } else {
@@ -168,8 +151,8 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
         lngAnim.stopAnimation();
 
         RNAnimated.parallel([
-          RNAnimated.timing(latAnim, { toValue: rawCoords[1], duration: 2000, easing: RNEasing.linear, useNativeDriver: false }),
-          RNAnimated.timing(lngAnim, { toValue: rawCoords[0], duration: 2000, easing: RNEasing.linear, useNativeDriver: false }),
+          RNAnimated.timing(latAnim, { toValue: snappedCoords[1], duration: 2000, easing: RNEasing.linear, useNativeDriver: false }),
+          RNAnimated.timing(lngAnim, { toValue: snappedCoords[0], duration: 2000, easing: RNEasing.linear, useNativeDriver: false }),
         ]).start();
         
         setCurrentHeading((burritoLocation.heading || 0) - 90);
@@ -242,20 +225,18 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
 
   let radarBorderColor = COLORS.primary;
   let radarBgColor = 'rgba(0, 174, 239, 0.35)';
-  if (radarStatus === 'stationary') {
+  
+  if (busMovementStatus === 'stopped') {
     radarBorderColor = '#FF9800';
     radarBgColor = 'rgba(255, 152, 0, 0.35)';
-  } else if (radarStatus === 'offline') {
-    radarBorderColor = '#F44336';
-    radarBgColor = 'rgba(244, 67, 54, 0.35)';
   }
 
   const showBusOnMap = burritoLocation && burritoLocation.isActive !== false;
+  const showRadar = busMovementStatus !== 'offline';
 
   return (
     <View style={styles.container}>
       
-      {/* MONITOR DE CAMPO FLOTANTE */}
       <View style={styles.debugPanel}>
         <Text style={styles.debugTitle}>RADAR DE DATOS RAW</Text>
         {debugLogs.map((log, index) => (
@@ -293,7 +274,7 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           />
         </Mapbox.ShapeSource>
 
-        {showBusOnMap && currentPos && (
+        {showBusOnMap && currentPos && showRadar && (
           <Mapbox.ShapeSource id="radarSource" shape={busShape as any}>
             <Mapbox.CircleLayer
               id="radarRingInner"
@@ -387,17 +368,16 @@ const styles = StyleSheet.create({
   }, 
   cardWrapper: { position: 'absolute', bottom: 40, alignSelf: 'center', zIndex: 100, elevation: 10 },
   
-  // ESTILOS DEL MONITOR DE CAMPO
   debugPanel: {
     position: 'absolute',
-    top: 50,
+    top: 100,
     left: 10,
     backgroundColor: 'rgba(0,0,0,0.7)',
     padding: 10,
     borderRadius: 8,
     zIndex: 999,
     elevation: 10,
-    pointerEvents: 'none' // Para que no bloquee los toques en el mapa
+    pointerEvents: 'none' 
   },
   debugTitle: { color: '#00FFFF', fontSize: 10, fontWeight: 'bold', marginBottom: 5 },
   debugText: { color: '#00FF00', fontSize: 11, fontFamily: 'monospace' },
