@@ -28,7 +28,7 @@ interface BurritoStoreState {
 // OJO AQUÍ: Agregué 'get' al lado de 'set'
 export const useBurritoStore = create<BurritoStoreState>((set, get) => {
   let stopBurritoLocationTracking: (() => void) | undefined;
-  let onlineInterval: NodeJS.Timeout | undefined;
+  let onlineInterval: ReturnType<typeof setTimeout> | undefined;
 
   return {
     location: null,

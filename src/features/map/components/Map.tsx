@@ -90,7 +90,7 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   }, []);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (selectedStopId) {
       timer = setTimeout(() => setSelectedStopId(null), 5000); 
     }
