@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, Easing as RNEasing, Animated as RNAnimated, TouchableOpacity } from 'react-native'; 
 import Mapbox from '@rnmapbox/maps';
 import { COLORS } from '../../../shared/theme/colors';
-import { PARADEROS, RUTA_GEOJSON } from '../constants/map_route';
+import { PARADEROS, RUTA_GEOJSON, PARADEROS_GEOJSON} from '../constants/map_route';
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
@@ -61,7 +61,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const { isFollowing, setIsFollowing, command, setCommand } = useMapStore();
   
-  // AHORA LEEMOS busMovementStatus
   const busMovementStatus = useBurritoStore((state) => state.busMovementStatus);
   
   const [isMapReady, setIsMapReady] = useState(false);
@@ -87,7 +86,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   }, []);
 
   useEffect(() => {
-    // FIX DE TYPESCRIPT
     let timer: ReturnType<typeof setTimeout>;
     if (selectedStopId) {
       timer = setTimeout(() => setSelectedStopId(null), 5000); 
@@ -95,7 +93,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
     return () => { if (timer) clearTimeout(timer); };
   }, [selectedStopId]);
 
-  // EL RADAR ESTÁ SINCRONIZADO AL MOVIMIENTO
   useEffect(() => {
     radarAnimValue.stopAnimation();
     radarAnimValue.setValue(0);
@@ -221,6 +218,8 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
   }, [currentPos, isFollowing]);
 
   const selectedStop = useMemo(() => PARADEROS.find(p => p.id === selectedStopId), [selectedStopId]);
+  
+  // Tema actual para pintar tanto los círculos como el texto
   const currentStopTheme = isDarkMode ? STOP_COLORS.dark : STOP_COLORS.light;
 
   let radarBorderColor = COLORS.primary;
@@ -265,6 +264,7 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           maxBounds={boundsActive ? UNMSM_BOUNDS : undefined} 
         />
         
+        {/* Solo cargamos la imagen del bus */}
         <Mapbox.Images images={{ busIcon: require('../../../assets/bus.png') }} />
         
         <Mapbox.ShapeSource id="routeSource" shape={RUTA_GEOJSON}>
@@ -290,33 +290,57 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
           </Mapbox.ShapeSource>
         )}
 
-        {PARADEROS.map(p => (
-          <Mapbox.MarkerView 
-            key={p.id} 
-            id={p.id} 
-            coordinate={[p.longitude, p.latitude]} 
-            allowOverlap={true}
-          >
-            <TouchableOpacity 
-              activeOpacity={0.6}
-              onPress={() => {
-                ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
-                analytics().logEvent('paradero_tocado', { nombre: p.name });
-                setSelectedStopId(prev => prev === p.id ? null : p.id);
-              }}
-              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} 
-              style={[
-                styles.markerContainer,
-                { 
-                  backgroundColor: currentStopTheme.bg,
-                  borderColor: currentStopTheme.border
-                }
-              ]}
-            >
-              <Icon name="bus-stop" size={14} color={currentStopTheme.icon} />
-            </TouchableOpacity>
-          </Mapbox.MarkerView>
-        ))}
+        {/* PARADEROS: Círculos pequeños con la letra "P" adentro */}
+        <Mapbox.ShapeSource 
+          id="stopsSource" 
+          shape={PARADEROS_GEOJSON}
+          onPress={(event) => {
+            const feature = event.features[0];
+            if (feature && feature.properties) {
+              const stopId = feature.properties.id;
+              const stopName = feature.properties.name;
+              
+              ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
+              analytics().logEvent('paradero_tocado', { nombre: stopName });
+              
+              setSelectedStopId(prev => prev === stopId ? null : stopId);
+            }
+          }}
+        >
+          {/* Círculo de Borde Exterior */}
+          <Mapbox.CircleLayer 
+            id="stopsLayerOuter" 
+            style={{
+              circleRadius: 10, // Reducido (antes 12)
+              circleColor: currentStopTheme.border, 
+              circlePitchAlignment: 'map',
+            }} 
+          />
+          {/* Círculo de Fondo Interior */}
+          <Mapbox.CircleLayer 
+            id="stopsLayerInner" 
+            style={{
+              circleRadius: 8, // Reducido (antes 9)
+              circleColor: currentStopTheme.bg, 
+              circlePitchAlignment: 'map',
+            }} 
+          />
+          {/* La letra "P" renderizada de forma nativa */}
+          <Mapbox.SymbolLayer 
+            id="stopsTextLayer" 
+            style={{
+              textField: 'P',
+              textSize: 10, // Letra pequeña para encajar en el radio 8
+              textColor: currentStopTheme.icon, // Blanco en Light, Gris Oscuro en Dark
+              textAllowOverlap: true,
+              textIgnorePlacement: true,
+              textPitchAlignment: 'map',
+              // Pequeño efecto para que la letra se note más limpia
+              textHaloColor: currentStopTheme.bg,
+              textHaloWidth: 0.5,
+            }} 
+          />
+        </Mapbox.ShapeSource>
 
         {showBusOnMap && busShape && (
           <Mapbox.ShapeSource id="busSource" shape={busShape as any}>
@@ -353,19 +377,6 @@ export const Map = ({ burritoLocation, isDarkMode }: any) => {
 const styles = StyleSheet.create({ 
   container: { flex: 1 }, 
   map: { flex: 1 }, 
-  markerContainer: { 
-    width: 24, 
-    height: 24, 
-    borderRadius: 12, 
-    borderWidth: 2,
-    justifyContent: 'center', 
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  }, 
   cardWrapper: { position: 'absolute', bottom: 40, alignSelf: 'center', zIndex: 100, elevation: 10 },
   
   debugPanel: {

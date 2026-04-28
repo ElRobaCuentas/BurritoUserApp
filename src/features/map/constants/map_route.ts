@@ -68,3 +68,20 @@ export const PARADEROS = [
   { id: '9', latitude: -12.054729, longitude: -77.083637, name: 'Puerta 7' },
   { id: '10', latitude: -12.053732, longitude: -77.085652, name: 'Sistemas' },
 ];
+
+
+export const PARADEROS_GEOJSON: any = {
+  type: 'FeatureCollection',
+  features: PARADEROS.map(p => ({
+    type: 'Feature',
+    id: p.id,
+    properties: {
+      id: p.id,
+      name: p.name,
+    },
+    geometry: {
+      type: 'Point',
+      coordinates: [p.longitude, p.latitude]
+    }
+  }))
+};
