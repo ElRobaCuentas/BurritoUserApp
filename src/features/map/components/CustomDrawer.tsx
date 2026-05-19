@@ -20,7 +20,8 @@ import { MapService } from '../services/map_service';
 import DeviceInfo from 'react-native-device-info';
 import { firebaseAuth } from '../../../shared/config/firebase';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import analytics from '@react-native-firebase/analytics'; // ← NUEVO
+import analytics from '@react-native-firebase/analytics'; 
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.72;
@@ -40,8 +41,9 @@ const AVATAR_LIST: { id: AvatarId; label: string }[] = [
 ];
 
 export const CustomDrawer = () => {
+  const navigation = useNavigation<any>();
   const { isOpen, closeDrawer } = useDrawerStore() as any;
-  const { username, avatar, uuid, email, setAvatar, logout, nickname } = useUserStore();
+  const { username, avatar, uuid, email, setAvatar, logout, nickname, rol} = useUserStore();
   const { isDarkMode, toggleTheme } = useThemeStore() as any; 
 
   const [isExpanding,   setIsExpanding]   = useState(false);
@@ -236,6 +238,27 @@ export const CustomDrawer = () => {
               </Animated.View>
             )}
           </Animated.View>
+
+          {/*Botón para el panel de gestión (solo admin)*/}
+          {rol === 'admin' && (
+            <TouchableOpacity 
+              style={[styles.menuCard, { backgroundColor: theme.card, marginTop: 12 }]}
+              onPress={() => {
+                closeDrawer();
+                setTimeout(() => navigation.navigate('AdminPanelScreen'), 300); // Retraso suave para que el menú cierre
+              }}
+            >
+              <View style={styles.menuItemSpace}>
+                <View style={styles.row}>
+                  <View style={[styles.iconCircle, { backgroundColor: COLORS.primary + '15' }]}>
+                    <Icon name="shield-account-outline" size={20} color={COLORS.primary} />
+                  </View>
+                  <Text style={[styles.menuText, { color: theme.text }]}>Panel de Gestión</Text>
+                </View>
+                <Icon name="chevron-right" size={22} color={COLORS.primary} />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.footer}>

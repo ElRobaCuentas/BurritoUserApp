@@ -69,7 +69,7 @@ export const SignInScreen = () => {
       // FIX C: Analytics no bloquea el login
       try { await analytics().logEvent('sesion_email'); } catch {}
 
-      login(uid, data.nombre, data.avatar as AvatarId, data.email);
+      login(uid, data.nombre, data.avatar as AvatarId, data.email, data.rol);
 
     } catch (error: any) {
       // FIX red: sin internet da mensaje claro
@@ -112,7 +112,7 @@ export const SignInScreen = () => {
         // FIX C: Analytics no bloquea el login
         try { await analytics().logEvent('sesion_google'); } catch {}
 
-        login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '');
+        login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '', data.rol);
       } else {
         navigation.navigate('AvatarPickerScreen', {
           uid,

@@ -32,6 +32,7 @@ const STOP_COLORS = {
   dark: { bg: '#FFB74D', border: '#1A1A1A', icon: '#1A1A1A' }
 };
 
+//! Fórmula de Haversine para calcular distancia entre dos puntos geográficos (en metros)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
@@ -43,6 +44,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c; 
 };
 
+//! Función para snapear a la ruta (opcional, puede causar que el bus "salte" si el GPS es inexacto)
 // const snapToRoute = (lat: number, lng: number) => {
 //   let minDistance = Infinity;
 //   let closestPoint = [lng, lat]; 
