@@ -90,13 +90,14 @@ export const SignUpScreen = () => {
         nombre:         username.trim(),
         avatar:         selectedId,
         email:          email.trim(),
+        rol:          'estudiante', //Cuando alguien se registra por email, siempre es estudiante. El rol de admin solo se asigna manualmente desde Firebase.
         ultimaConexion: database.ServerValue.TIMESTAMP,
       });
 
       // FIX C: Analytics no bloquea el registro
       try { await analytics().logEvent('sesion_email'); } catch {}
 
-      login(uid, username.trim(), selectedId as AvatarId, email.trim());
+      login(uid, username.trim(), selectedId as AvatarId, email.trim(), 'estudiante');
 
     } catch (error: any) {
       // FIX red: sin internet da mensaje claro
@@ -140,7 +141,7 @@ export const SignUpScreen = () => {
         // FIX C: Analytics no bloquea el login
         try { await analytics().logEvent('sesion_google'); } catch {}
 
-        login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '');
+        login(uid, data.nombre, data.avatar as AvatarId, data.email ?? result.user.email ?? '', data.rol );
       } else {
         // Cuenta nueva — va a elegir facultad y nombre
         navigation.navigate('AvatarPickerScreen', {
