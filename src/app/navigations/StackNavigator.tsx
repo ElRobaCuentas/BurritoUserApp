@@ -10,6 +10,7 @@ import { ForgotPasswordScreen }   from '../../features/auth/screen/ForgotPasswor
 import { SignInScreen }           from '../../features/auth/screen/SignInScreen';
 import { SignUpScreen }           from '../../features/auth/screen/SignUpScreen';
 import { AdminPanelScreen } from '../../features/admin/screen/AdminPanelScreen';
+import { ChoferesScreen } from '../../features/admin/screen/ChoferesScreen';
 
 export type RootStackParams = {
   WelcomeScreen:        undefined;
@@ -19,6 +20,7 @@ export type RootStackParams = {
   AvatarPickerScreen:   { uid: string; displayName: string; email: string };
   MainApp:              undefined;
   AdminPanelScreen:     undefined;
+  ChoferesScreen:       undefined;
 };
 
 const Stack = createStackNavigator<RootStackParams>();
@@ -33,24 +35,25 @@ export const StackNavigator = () => {
         animation: 'none',
       }}
     >
-    {isLoggedIn ? (
-      <>
-        <Stack.Screen name="MainApp" component={DrawerNavigator} />
-        <Stack.Screen name="AdminPanelScreen" component={AdminPanelScreen} />
-      </>
-    ) : ( 
-  <>
-    <Stack.Screen name="WelcomeScreen"       component={WelcomeScreen} />
-    <Stack.Screen name="SignInScreen"         component={SignInScreen} />
-    <Stack.Screen name="SignUpScreen"         component={SignUpScreen} />
-    <Stack.Screen name="ForgotPasswordScreen" component={ForgotPasswordScreen} />
-    <Stack.Screen
-      name="AvatarPickerScreen"
-      component={AvatarPickerScreen}
-      options={{ animation: 'slide_from_bottom' }}
-    />
-  </>
-)}
+      {isLoggedIn ? (
+        <>
+          <Stack.Screen name="MainApp" component={DrawerNavigator} />
+          <Stack.Screen name="AdminPanelScreen" component={AdminPanelScreen} />
+          <Stack.Screen name="ChoferesScreen" component={ChoferesScreen} options={{ title: 'Gestión de Conductores' }} />
+        </>
+      ) : ( 
+        <>
+          <Stack.Screen name="WelcomeScreen"       component={WelcomeScreen} />
+          <Stack.Screen name="SignInScreen"        component={SignInScreen} />
+          <Stack.Screen name="SignUpScreen"        component={SignUpScreen} />
+          <Stack.Screen name="ForgotPasswordScreen" component={ForgotPasswordScreen} />
+          <Stack.Screen
+            name="AvatarPickerScreen"
+            component={AvatarPickerScreen}
+            options={{ animation: 'slide_from_bottom' }}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 };
