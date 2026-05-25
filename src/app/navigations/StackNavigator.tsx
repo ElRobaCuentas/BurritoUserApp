@@ -9,8 +9,9 @@ import { AvatarPickerScreen }     from '../../features/auth/screen/AvatarPickerS
 import { ForgotPasswordScreen }   from '../../features/auth/screen/ForgotPasswordScreen';
 import { SignInScreen }           from '../../features/auth/screen/SignInScreen';
 import { SignUpScreen }           from '../../features/auth/screen/SignUpScreen';
-import { AdminPanelScreen } from '../../features/admin/screen/AdminPanelScreen';
-import { ChoferesScreen } from '../../features/admin/screen/ChoferesScreen';
+import { AdminPanelScreen }       from '../../features/admin/screen/AdminPanelScreen';
+import { ChoferesScreen }         from '../../features/admin/screen/ChoferesScreen';
+import { BusesScreen }            from '../../features/admin/screen/BusesScreen';
 
 export type RootStackParams = {
   WelcomeScreen:        undefined;
@@ -21,6 +22,7 @@ export type RootStackParams = {
   MainApp:              undefined;
   AdminPanelScreen:     undefined;
   ChoferesScreen:       undefined;
+  BusesScreen:          undefined;
 };
 
 const Stack = createStackNavigator<RootStackParams>();
@@ -40,6 +42,7 @@ export const StackNavigator = () => {
           <Stack.Screen name="MainApp" component={DrawerNavigator} />
           <Stack.Screen name="AdminPanelScreen" component={AdminPanelScreen} />
           <Stack.Screen name="ChoferesScreen" component={ChoferesScreen} options={{ title: 'Gestión de Conductores' }} />
+          <Stack.Screen name="BusesScreen" component={BusesScreen} options={{ title: 'Gestión de Flota' }} />
         </>
       ) : ( 
         <>

@@ -29,7 +29,19 @@ export const AdminPanelScreen = () => {
           </View>
         </TouchableOpacity>
 
-        {/* Los siguientes módulos se agregarán en las próximas tareas (T08 y T09) */}
+        {/* BOTÓN GESTIÓN DE BUSES */}
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={() => navigation.navigate('BusesScreen')}
+        >
+          <Text style={styles.buttonEmoji}>🚐</Text>
+          <View style={styles.buttonTextContainer}>
+            <Text style={styles.buttonTitle}>Gestión de Flota (Buses)</Text>
+            <Text style={styles.buttonDescription}>Registrar placas, modelos y estado de los vehículos</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Los siguientes módulos se agregarán en las próximas tareas */}
       </View>
     </View>
   );
@@ -50,7 +62,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: TYPOGRAPHY.primary.regular,
     fontSize: 14,
-    color: '#666666', // Usamos un gris estándar porque tu tema no tiene textSecondary
+    color: '#666666',
     marginBottom: 30,
     marginTop: 5,
   },
