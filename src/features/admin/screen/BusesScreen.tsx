@@ -66,7 +66,6 @@ export const BusesScreen = () => {
       <Switch
         value={item.activo}
         onValueChange={(newValue: boolean) => {
-          // Call service and ignore returned boolean to satisfy Switch's expected void/Promise<void> return
           AdminService.toggleBusStatus(item.placa, newValue).catch(() => {});
         }}
         trackColor={{ false: '#CCCCCC', true: COLORS.primary }}

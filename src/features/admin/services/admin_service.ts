@@ -134,6 +134,7 @@ export const AdminService = {
   createBus: async (busData: Omit<Bus, 'activo'>) => {
     const placaKey = busData.placa.toUpperCase().trim();
     const ref = firebaseDatabase.ref(`${BUSES_PATH}/${placaKey}`);
+    const ubicacionRef = firebaseDatabase.ref(`/ubicacion_buses/${placaKey}`);
     
     const snapshot = await ref.once('value');
     if (snapshot.exists()) {
@@ -146,14 +147,20 @@ export const AdminService = {
       anio: busData.anio.trim(),
       activo: true
     });
+
+    // CAMBIO QUIRÚRGICO: Inicializar ubicación automáticamente en falso para el GPS
+    await ubicacionRef.set({
+      isActive: false
+    });
+
     return true;
   },
 
   // 3. Toggle Activo / Inactivo Bus
-  toggleBusStatus: async (placa: string, currentStatus: boolean) => {
+  toggleBusStatus: async (placa: string, newStatus: boolean) => {
     try {
       await firebaseDatabase.ref(`${BUSES_PATH}/${placa}`).update({
-        activo: !currentStatus
+        activo: newStatus
       });
       return true;
     } catch (error) {
