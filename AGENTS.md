@@ -265,6 +265,7 @@ inconsistencia documental antes de continuar.
 | El flujo de datos | `docs/ARCHITECTURE.md` |
 | Una decisión arquitectónica | `docs/DECISIONS.md` |
 | Un bug identificado | `docs/TROUBLESHOOTING.md` |
+| Un bug corregido | `docs/BUGS_RESUELTOS/` |
 | Una limitación del sistema | `docs/PROJECT_CONTEXT.md` |
 | Las prioridades o fases | `docs/ROADMAP.md` |
 | Una regla de trabajo para IA | `AGENTS.md` |
@@ -301,6 +302,7 @@ inconsistencia documental antes de continuar.
 | Bugs conocidos | `docs/TROUBLESHOOTING.md` |
 | Decisiones arquitectónicas | `docs/DECISIONS.md` |
 | Revisión futura | `docs/ReviewNotes.md` |
+| Historial de bugs resueltos | `docs/BUGS_RESUELTOS/` |
 | Setup del proyecto | `README.md` |
 
 Recomendación: Si debes modificar documentación, consulta primero

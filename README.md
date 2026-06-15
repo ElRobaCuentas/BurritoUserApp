@@ -135,3 +135,4 @@ La arquitectura multi-bus se encuentra planificada para futuras versiones.
 | `ARCHITECTURE.md` | Flujo de datos, componentes y ciclo de vida. |
 | `FIREBASE_SCHEMA.md` | Estructura de nodos y payloads de la RTDB. |
 | `AGENTS.md` | Comandos, convenciones y detalles para asistentes IA. |
+| `BUGS_RESUELTOS/` | Historial de bugs resueltos durante el desarrollo. |
