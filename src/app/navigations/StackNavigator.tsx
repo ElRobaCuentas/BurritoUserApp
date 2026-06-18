@@ -32,6 +32,7 @@ const Stack = createStackNavigator<RootStackParams>();
 
 export const StackNavigator = () => {
   const isLoggedIn = useUserStore((state: UserState) => state.isLoggedIn);
+  const rol = useUserStore((state: UserState) => state.rol);
 
   return (
     <Stack.Navigator
@@ -43,12 +44,16 @@ export const StackNavigator = () => {
       {isLoggedIn ? (
         <>
           <Stack.Screen name="MainApp" component={DrawerNavigator} />
-          <Stack.Screen name="AdminPanelScreen" component={AdminPanelScreen} />
-          <Stack.Screen name="ChoferesScreen" component={ChoferesScreen} options={{ title: 'Gestión de Conductores' }} />
-          <Stack.Screen name="BusesScreen" component={BusesScreen} options={{ title: 'Gestión de Flota' }} />
-          <Stack.Screen name="AsignacionesScreen" component={AsignacionesScreen} options={{ title: 'Asignaciones' }} /> 
+          {rol === 'admin' && (
+            <>
+              <Stack.Screen name="AdminPanelScreen" component={AdminPanelScreen} />
+              <Stack.Screen name="ChoferesScreen" component={ChoferesScreen} options={{ title: 'Gestión de Conductores' }} />
+              <Stack.Screen name="BusesScreen" component={BusesScreen} options={{ title: 'Gestión de Flota' }} />
+              <Stack.Screen name="AsignacionesScreen" component={AsignacionesScreen} options={{ title: 'Asignaciones' }} />
+            </>
+          )}
         </>
-      ) : ( 
+      ) : (
         <>
           <Stack.Screen name="WelcomeScreen"       component={WelcomeScreen} />
           <Stack.Screen name="SignInScreen"        component={SignInScreen} />
