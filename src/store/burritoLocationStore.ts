@@ -4,7 +4,7 @@ import { MapService } from '../features/map/services/map_service';
 
 export type BusMovementStatus = 'moving' | 'stopped' | 'offline';
 
-const getMovementStatus = (timestampAge: number, isActive: boolean): BusMovementStatus => {
+export const getMovementStatus = (timestampAge: number, isActive: boolean): BusMovementStatus => {
   if (!isActive) return 'offline';
   if (timestampAge < 12000) return 'moving';
   return 'stopped';

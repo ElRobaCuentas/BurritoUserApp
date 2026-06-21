@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, Easing as RNEasing, Animated as RNAnimated, Tou
 import Mapbox from '@rnmapbox/maps';
 import { COLORS } from '../../../shared/theme/colors';
 import { PARADEROS, RUTA_GEOJSON, PARADEROS_GEOJSON} from '../constants/map_route';
+import { calculateDistance } from '../utils/geo';
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
@@ -34,17 +35,6 @@ const STOP_COLORS = {
 };
 
 //! Fórmula de Haversine para calcular distancia entre dos puntos geográficos (en metros)
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371e3;
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; 
-};
-
 //! Función para snapear a la ruta (opcional, puede causar que el bus "salte" si el GPS es inexacto)
 // const snapToRoute = (lat: number, lng: number) => {
 //   let minDistance = Infinity;
