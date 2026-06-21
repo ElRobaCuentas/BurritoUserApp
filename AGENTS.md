@@ -104,7 +104,7 @@ Paths resumidos. Payloads completos en FIREBASE_SCHEMA.md.
 
 | Uso | Paths |
 |-----|-------|
-| Tracking (lectura) | `/ubicacion_burrito` (legacy) |
+| Tracking (lectura) | `/ubicacion_buses` |
 | Feedback (escritura) | `/comentarios` |
 | Admin (lectura/escritura) | `/choferes`, `/buses`, `/asignaciones` |
 | Usuarios (lectura/escritura) | `/usuarios/{uid}` |
