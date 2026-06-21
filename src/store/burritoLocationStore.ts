@@ -2,10 +2,6 @@ import { create } from 'zustand';
 import { BurritoLocation } from '../features/map/types';
 import { MapService } from '../features/map/services/map_service';
 
-// NUEVA SEMÁNTICA: 
-// < 12000ms  → 'moving'  → Dato fresco, bus avanzando
-// > 12000ms  → 'stopped' → Silencio del GPS por estar quieto en paradero
-// isActive: false → 'offline' → Conductor finalizó el recorrido
 export type BusMovementStatus = 'moving' | 'stopped' | 'offline';
 
 const getMovementStatus = (timestampAge: number, isActive: boolean): BusMovementStatus => {
@@ -15,9 +11,9 @@ const getMovementStatus = (timestampAge: number, isActive: boolean): BusMovement
 };
 
 interface BurritoStoreState {
-  location: BurritoLocation | null;
+  locations: Record<string, BurritoLocation>;
   isConnecting: boolean;
-  busMovementStatus: BusMovementStatus;
+  busMovementStates: Record<string, BusMovementStatus>;
 
   actions: {
     startTracking: () => void;
@@ -26,61 +22,71 @@ interface BurritoStoreState {
 }
 
 export const useBurritoStore = create<BurritoStoreState>((set, get) => {
-  let stopBurritoLocationTracking: (() => void) | undefined;
+  let stopBusLocationsTracking: (() => void) | undefined;
   let onlineInterval: ReturnType<typeof setTimeout> | undefined;
 
   return {
-    location: null,
+    locations: {},
     isConnecting: false,
-    busMovementStatus: 'offline',
+    busMovementStates: {},
 
     actions: {
       startTracking: () => {
-        if (stopBurritoLocationTracking) stopBurritoLocationTracking();
+        if (stopBusLocationsTracking) stopBusLocationsTracking();
         if (onlineInterval) clearInterval(onlineInterval);
 
-        set({ isConnecting: true, location: null, busMovementStatus: 'offline' });
+        set({ isConnecting: true, locations: {}, busMovementStates: {} });
 
-        stopBurritoLocationTracking = MapService.subscribeToBusLocation((newLocation) => {
+        stopBusLocationsTracking = MapService.subscribeToBusLocations((newLocations) => {
           const now = Date.now();
-          const newTimestamp = newLocation?.timestamp || 0;
-          const isActive = newLocation?.isActive !== false;
 
-          // --- FILTRO DE ADUANA ---
-          const currentTimestamp = get().location?.timestamp || 0;
-          if (newTimestamp > 0 && currentTimestamp > 0 && newTimestamp <= currentTimestamp) {
-            return; 
-          }
+          set((state) => {
+            const mergedLocations = { ...state.locations };
+            const mergedStates = { ...state.busMovementStates };
 
-          set({
-            location: newLocation,
-            isConnecting: false,
-            busMovementStatus: getMovementStatus(now - newTimestamp, isActive)
+            Object.entries(newLocations).forEach(([placa, loc]) => {
+              const newTs = loc.timestamp || 0;
+              const prevTs = state.locations[placa]?.timestamp || 0;
+
+              // FILTRO DE ADUANA: solo actualiza si el timestamp es más nuevo
+              if (newTs > 0 && prevTs > 0 && newTs <= prevTs) return;
+
+              mergedLocations[placa] = loc;
+              mergedStates[placa] = getMovementStatus(now - newTs, loc.isActive !== false);
+            });
+
+            return {
+              locations: mergedLocations,
+              isConnecting: false,
+              busMovementStates: mergedStates,
+            };
           });
         });
 
-        // Revisa cada 2 segundos el estado
+        // Revisa cada 2 segundos el estado de todas las placas
         onlineInterval = setInterval(() => {
           set((state) => {
-            if (!state.location) return { busMovementStatus: 'offline' };
             const now = Date.now();
-            const busTime = state.location?.timestamp || 0;
-            const isActive = state.location?.isActive !== false;
-            return { busMovementStatus: getMovementStatus(now - busTime, isActive) };
+            const newStates: Record<string, BusMovementStatus> = {};
+            Object.entries(state.locations).forEach(([placa, loc]) => {
+              const ts = loc.timestamp || 0;
+              newStates[placa] = getMovementStatus(now - ts, loc.isActive !== false);
+            });
+            return { busMovementStates: newStates };
           });
         }, 2000);
       },
 
       stopTracking: () => {
-        if (stopBurritoLocationTracking) {
-          stopBurritoLocationTracking();
-          stopBurritoLocationTracking = undefined;
+        if (stopBusLocationsTracking) {
+          stopBusLocationsTracking();
+          stopBusLocationsTracking = undefined;
         }
         if (onlineInterval) {
           clearInterval(onlineInterval);
           onlineInterval = undefined;
         }
-        set({ location: null, isConnecting: false, busMovementStatus: 'offline' });
+        set({ locations: {}, isConnecting: false, busMovementStates: {} });
       }
     }
   };

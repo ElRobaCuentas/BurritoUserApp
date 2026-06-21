@@ -6,7 +6,8 @@ import { PARADEROS, RUTA_GEOJSON, PARADEROS_GEOJSON} from '../constants/map_rout
 import { StopCard } from './StopCard'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
-import { useBurritoStore } from '../../../store/burritoLocationStore'; 
+import { useBurritoStore, BusMovementStatus } from '../../../store/burritoLocationStore'; 
+import { BurritoLocation } from '../types';
 import Reanimated, { FadeInDown, FadeOutDown, Easing } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import analytics from '@react-native-firebase/analytics';
@@ -58,13 +59,35 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 //   return closestPoint; 
 // };
 
-export const Map = ({ burritoLocation, isDarkMode }: any) => {
+interface MapProps {
+  locations: Record<string, BurritoLocation>;
+  isDarkMode: boolean;
+}
+
+export const Map = ({ locations, isDarkMode }: MapProps) => {
   const cameraRef = useRef<Mapbox.Camera>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const { isFollowing, setIsFollowing, command, setCommand } = useMapStore();
   
-  const busMovementStatus = useBurritoStore((state) => state.busMovementStatus);
-  
+  const busMovementStates = useBurritoStore((state) => state.busMovementStates);
+
+  const burritoLocation = useMemo(() => {
+    const entries = Object.entries(locations || {});
+    const active = entries.filter((entry): entry is [string, BurritoLocation] => entry[1].isActive !== false);
+    if (active.length === 0) return null;
+    active.sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+    return active[0][1];
+  }, [locations]);
+
+  const busMovementStatus: BusMovementStatus = useMemo(() => {
+    const entries = Object.entries(locations || {});
+    const active = entries.filter((entry): entry is [string, BurritoLocation] => entry[1].isActive !== false);
+    if (active.length === 0) return 'offline';
+    active.sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+    const topPlaca = active[0][0];
+    return busMovementStates[topPlaca] || 'offline';
+  }, [locations, busMovementStates]);
+
   const [isMapReady, setIsMapReady] = useState(false);
   const [boundsActive, setBoundsActive] = useState(false);
   const [isFirstBusLoad, setIsFirstBusLoad] = useState(true);

@@ -37,7 +37,7 @@ const BURRITO_COLORS = {
 };
 
 export const MapScreen = () => {
-  const { location, actions } = useBurritoStore();
+  const { locations, actions } = useBurritoStore();
   const { isDarkMode } = useThemeStore();
   const { isFollowing, setCommand } = useMapStore();
   const { openDrawer } = useDrawerStore();
@@ -46,6 +46,8 @@ export const MapScreen = () => {
 
   const [minTimeReached, setMinTimeReached] = useState(false);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
+
+  const locationCount = Object.keys(locations).length;
 
   useEffect(() => {
     actions.startTracking();
@@ -71,10 +73,10 @@ export const MapScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (minTimeReached && location) {
+    if (minTimeReached && locationCount > 0) {
       setHasInitialLoad(true);
     }
-  }, [location, minTimeReached]);
+  }, [locationCount, minTimeReached]);
 
   const loadingGradient = isDarkMode
     ? ['#121212', BURRITO_COLORS.darkPrimary]
@@ -88,8 +90,9 @@ export const MapScreen = () => {
     openDrawer();
   };
 
-  const isBusActive = !!location && location.isActive !== false;
-  const isBusResting = location?.isActive === false;
+  const locationValues = Object.values(locations);
+  const isBusActive = locationValues.some(loc => loc.isActive !== false);
+  const isBusResting = locationCount > 0 && locationValues.every(loc => loc.isActive === false);
 
   return (
     <View style={styles.container}>
@@ -100,7 +103,7 @@ export const MapScreen = () => {
       />
 
       <View style={styles.mapWrapper}>
-        <Map burritoLocation={location} isDarkMode={isDarkMode} />
+        <Map locations={locations} isDarkMode={isDarkMode} />
       </View>
 
       {!hasInitialLoad && (

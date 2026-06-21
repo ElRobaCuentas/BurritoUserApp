@@ -11,27 +11,32 @@ interface FeedbackData {
   email:    string;  
 }
 
-const BURRITO_LOCATION_PATH = '/ubicacion_burrito';
+const BUSES_LOCATION_PATH = '/ubicacion_buses';
 const FEEDBACK_PATH = '/comentarios';
 
 export const MapService = {
 
-    subscribeToBusLocation: (onLocationUpdate: (location: BurritoLocation) => void) => {
-        const ref = firebaseDatabase.ref(BURRITO_LOCATION_PATH);
+    subscribeToBusLocations: (onUpdate: (locations: Record<string, BurritoLocation>) => void) => {
+        const ref = firebaseDatabase.ref(BUSES_LOCATION_PATH);
 
         const onValueChange = ref.on('value', (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
 
-            const safeLocation: BurritoLocation = {
-                latitude: data.latitude ?? 0,
-                longitude: data.longitude ?? 0,
-                heading: data.heading ?? 0,
-                isActive: data.isActive ?? false,
-                timestamp: data.timestamp ?? Date.now()
-            };
+            const locations: Record<string, BurritoLocation> = {};
+            Object.keys(data).forEach((placa) => {
+                const entry = data[placa];
+                if (!entry) return;
+                locations[placa] = {
+                    latitude: entry.latitude ?? 0,
+                    longitude: entry.longitude ?? 0,
+                    heading: entry.heading ?? 0,
+                    isActive: entry.isActive ?? false,
+                    timestamp: entry.timestamp ?? Date.now(),
+                };
+            });
 
-            onLocationUpdate(safeLocation);
+            onUpdate(locations);
         });
 
         return () => ref.off('value', onValueChange);

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View, Text, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS } from '../../../shared/theme/colors';
 import { TYPOGRAPHY } from '../../../shared/theme/typography';
-import { useBurritoStore } from '../../../store/burritoLocationStore';
+import { useBurritoStore, BusMovementStatus } from '../../../store/burritoLocationStore';
+import { BurritoLocation } from '../types';
 
 interface MapBrandingProps {
   isDarkMode: boolean;
@@ -20,7 +21,17 @@ const MOVEMENT_CONFIG = {
 
 export const MapBranding = ({ isDarkMode }: MapBrandingProps) => {
   const insets = useSafeAreaInsets();
-  const busMovementStatus = useBurritoStore((state) => state.busMovementStatus);
+  const locations = useBurritoStore((state) => state.locations);
+  const busMovementStates = useBurritoStore((state) => state.busMovementStates);
+
+  const busMovementStatus: BusMovementStatus = useMemo(() => {
+    const entries = Object.entries(locations || {});
+    const active = entries.filter((entry): entry is [string, BurritoLocation] => entry[1].isActive !== false);
+    if (active.length === 0) return 'offline';
+    active.sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+    const topPlaca = active[0][0];
+    return busMovementStates[topPlaca] || 'offline';
+  }, [locations, busMovementStates]);
 
   const config = MOVEMENT_CONFIG[busMovementStatus];
 
