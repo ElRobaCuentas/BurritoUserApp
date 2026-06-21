@@ -291,6 +291,62 @@ inconsistencia documental antes de continuar.
 
 ---
 
+## 9. Filosofía de Blindaje Lógico (SYTHOR)
+
+### Propósito
+
+Los archivos de prueba unitaria en `__tests__/` no son "código secundario".
+Son **blindajes lógicos** que protegen las funciones matemáticas y de estado
+del ecosistema contra regresiones silenciosas.
+
+### Caso de estudio: Regresión de Haversine
+
+En octubre de 2026, una actualización de `react-native` (o un refactor de
+dependencias matemáticas) podría alterar la precisión de la fórmula de
+Haversine. Sin tests, el error sería invisible:
+
+- El bus está en la Puerta Principal de la UNMSM (-12.0575, -77.0830).
+- La app calcula distancia a la Biblioteca Central (-12.0585, -77.0820).
+- **Sin test:** una regresión podría devolver 4km en vez de 120m. El bus
+  aparece "saltando" en el mapa. No hay error de compilación, no hay crash.
+  El bug pasa a producción silenciosamente.
+- **Con test:** `calculateDistance.test.ts` falla al instante porque
+  `expect(result).toBeGreaterThan(100)` detecta el valor anómalo.
+
+### Regla: No eliminar tests unitarios
+
+- **Nunca borres** `__tests__/calculateDistance.test.ts`,
+  `__tests__/getMovementStatus.test.ts` o
+  `__tests__/burritoLocationStore.test.ts`.
+- Son la única barrera contra regresiones matemáticas en el pipeline.
+- Si un refactor cambia la firma de `calculateDistance` o `getMovementStatus`,
+  los tests deben actualizarse, no eliminarse.
+- Si una dependencia nativa deja de ser compatible, se mockea en el test,
+  no se elimina el test.
+
+### Regla: Mock, no silencies
+
+Cuando una función pura necesita aislarse de módulos nativos (Firebase,
+Mapbox, Reanimated), se extrae a un archivo utilitario (ej. `geo.ts`,
+`trackingUtils.ts`) y se prueba sin mock. Si el módulo nativo es inevitable,
+se usa `jest.mock()` en el test, no se elimina la cobertura.
+
+### Regla: Datos de simulación como documentación viva
+
+Los casos de prueba en las tablas parametrizadas (`test.each`) son
+documentación ejecutable. Definen los límites del sistema:
+
+| Test | Qué protege |
+|------|-------------|
+| `calculateDistance(0,0,0,1) ≈ 111km` | Fórmula del ecuador |
+| `getMovementStatus(12000, true) === 'stopped'` | Umbral de 12 segundos |
+| Filtro de aduana rechaza timestamp ≤ previo | Consistencia multi-bus |
+
+Cada uno de estos tests es un **contrato** entre el código y el
+comportamiento esperado. Si el contrato se rompe, el test falla.
+
+---
+
 ## Referencias
 
 | Si necesitas... | Lee... |
