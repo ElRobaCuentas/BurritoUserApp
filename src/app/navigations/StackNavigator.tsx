@@ -9,12 +9,6 @@ import { AvatarPickerScreen }     from '../../features/auth/screen/AvatarPickerS
 import { ForgotPasswordScreen }   from '../../features/auth/screen/ForgotPasswordScreen';
 import { SignInScreen }           from '../../features/auth/screen/SignInScreen';
 import { SignUpScreen }           from '../../features/auth/screen/SignUpScreen';
-import { AdminPanelScreen }       from '../../features/admin/screen/AdminPanelScreen';
-import { ChoferesScreen }         from '../../features/admin/screen/ChoferesScreen';
-import { BusesScreen }            from '../../features/admin/screen/BusesScreen';
-import { AsignacionesScreen }     from '../../features/admin/screen/AsignacionesScreen'; 
-
-
 export type RootStackParams = {
   WelcomeScreen:        undefined;
   SignInScreen:         undefined;
@@ -22,17 +16,12 @@ export type RootStackParams = {
   ForgotPasswordScreen: undefined;
   AvatarPickerScreen:   { uid: string; displayName: string; email: string };
   MainApp:              undefined;
-  AdminPanelScreen:     undefined;
-  ChoferesScreen:       undefined;
-  BusesScreen:          undefined;
-  AsignacionesScreen:   undefined; 
 };
 
 const Stack = createStackNavigator<RootStackParams>();
 
 export const StackNavigator = () => {
   const isLoggedIn = useUserStore((state: UserState) => state.isLoggedIn);
-  const rol = useUserStore((state: UserState) => state.rol);
 
   return (
     <Stack.Navigator
@@ -44,14 +33,6 @@ export const StackNavigator = () => {
       {isLoggedIn ? (
         <>
           <Stack.Screen name="MainApp" component={DrawerNavigator} />
-          {rol === 'admin' && (
-            <>
-              <Stack.Screen name="AdminPanelScreen" component={AdminPanelScreen} />
-              <Stack.Screen name="ChoferesScreen" component={ChoferesScreen} options={{ title: 'Gestión de Conductores' }} />
-              <Stack.Screen name="BusesScreen" component={BusesScreen} options={{ title: 'Gestión de Flota' }} />
-              <Stack.Screen name="AsignacionesScreen" component={AsignacionesScreen} options={{ title: 'Asignaciones' }} />
-            </>
-          )}
         </>
       ) : (
         <>

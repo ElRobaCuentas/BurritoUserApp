@@ -18,10 +18,10 @@ export interface UserState {
   avatar: AvatarId | null;
   nickname: string | null; 
   email: string | null; 
-  rol: 'estudiante' | 'admin' | null; //nuevo campo para el rol del admin
+  rol: 'estudiante' | null;
   isLoggedIn: boolean; 
   _hasHydrated: boolean;
-  login: (uuid: string, username: string, avatar: AvatarId, email?: string, rol?: 'estudiante' | 'admin' | null) => void; 
+  login: (uuid: string, username: string, avatar: AvatarId, email?: string, rol?: string) => void; 
   logout: () => void;
   setAvatar: (avatar: AvatarId) => void;
   setHasHydrated: (state: boolean) => void;
@@ -39,11 +39,11 @@ export const useUserStore = create<UserState>()(
       isLoggedIn: false, 
       _hasHydrated: false,
 
-      login: (uuid, username, avatar, email, rol) => {
+      login: (uuid, username, avatar, email, _rol?) => {
         const nicknames = SANMARCOS_NICKNAMES[avatar];
         const randomNick = nicknames[Math.floor(Math.random() * nicknames.length)];
         
-        set({ uuid, username, avatar, email: email ?? null, nickname: randomNick, rol: rol ?? 'estudiante', isLoggedIn: true });
+        set({ uuid, username, avatar, email: email ?? null, nickname: randomNick, rol: 'estudiante', isLoggedIn: true });
       },
 
       logout: () => {
