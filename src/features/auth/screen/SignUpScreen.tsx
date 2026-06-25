@@ -90,7 +90,7 @@ export const SignUpScreen = () => {
         nombre:         username.trim(),
         avatar:         selectedId,
         email:          email.trim(),
-        rol:          'estudiante', //Cuando alguien se registra por email, siempre es estudiante. El rol de admin solo se asigna manualmente desde Firebase.
+        rol:          'estudiante', //Siempre estudiante. La autorización admin depende de /administradores/{auth.uid} (ADR-017). No existe rol admin operativo.
         ultimaConexion: database.ServerValue.TIMESTAMP,
       });
 

@@ -106,9 +106,7 @@ Paths resumidos. Payloads completos en FIREBASE_SCHEMA.md.
 |-----|-------|
 | Tracking (lectura) | `/ubicacion_buses` |
 | Feedback (escritura) | `/comentarios` |
-| Admin (lectura/escritura) | `/choferes`, `/buses`, `/asignaciones` |
 | Usuarios (lectura/escritura) | `/usuarios/{uid}` |
-| Ubicación buses (init admin) | `/ubicacion_buses/{placa}` |
 
 Si modificas paths de RTDB, lee FIREBASE_SCHEMA.md completo y
 ARCHITECTURE.md sección 5.
