@@ -90,3 +90,6 @@ serviceAccountKey.json
 # Archivos temporales de Python
 __pycache__/
 *.py[cod]
+
+# React Native CLI diagnostic output
+rnconfig.json
