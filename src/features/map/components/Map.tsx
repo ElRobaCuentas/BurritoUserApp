@@ -24,11 +24,6 @@ Mapbox.setAccessToken(MAPBOX_PUBLIC_TOKEN);
 
 const UNMSM_STATIC_VIEW = { center: [-77.0830, -12.0575] as [number, number], zoom: 15.1 };
 
-const UNMSM_BOUNDS = { 
-  ne: [-77.0600, -12.0300] as [number, number], 
-  sw: [-77.1100, -12.0850] as [number, number]  
-};
-
 const STOP_COLORS = {
   light: { bg: '#E65100', border: '#FFFFFF', icon: '#FFFFFF' },
   dark: { bg: '#FFB74D', border: '#1A1A1A', icon: '#1A1A1A' }
@@ -79,7 +74,6 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
   }, [locations, busMovementStates]);
 
   const [isMapReady, setIsMapReady] = useState(false);
-  const [boundsActive, setBoundsActive] = useState(false);
   const [isFirstBusLoad, setIsFirstBusLoad] = useState(true);
 
   const latAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[1])).current;
@@ -145,7 +139,7 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
       // const snappedCoords = snapToRoute(burritoLocation.latitude, burritoLocation.longitude);
       const rawCoords = [burritoLocation.longitude, burritoLocation.latitude];
       
-      const timeStr = burritoLocation.timestamp ? String(burritoLocation.timestamp).slice(-6) : 'N/A';
+      const timeStr = burritoLocation.timestamp ? new Date(burritoLocation.timestamp).toLocaleTimeString() : 'N/A';
       const logMsg = `T:${timeStr} | L:${burritoLocation.latitude.toFixed(4)},${burritoLocation.longitude.toFixed(4)}`;
       
       setDebugLogs(prev => {
@@ -188,17 +182,6 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
       geometry: { type: 'Point' as const, coordinates: currentPos }
     };
   }, [currentPos]);
-
-  useEffect(() => {
-    if (isMapReady) {
-      cameraRef.current?.setCamera({
-        centerCoordinate: UNMSM_STATIC_VIEW.center,
-        zoomLevel: UNMSM_STATIC_VIEW.zoom,
-        animationDuration: 0, 
-      });
-      setTimeout(() => { setBoundsActive(true); }, 800);
-    }
-  }, [isMapReady]);
 
   useEffect(() => {
     if (command === 'center') {
@@ -277,7 +260,6 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
             centerCoordinate: UNMSM_STATIC_VIEW.center, 
             zoomLevel: UNMSM_STATIC_VIEW.zoom 
           }} 
-          maxBounds={boundsActive ? UNMSM_BOUNDS : undefined} 
         />
         
         {/* Solo cargamos la imagen del bus */}
