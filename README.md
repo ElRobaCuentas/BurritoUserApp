@@ -95,7 +95,7 @@ src/
   asignaciones. Acceso restringido a usuarios con rol `admin`.
 - **Feedback:** modal de calificación y comentarios desde el menú
   lateral. Los datos se almacenan en `/comentarios`.
-- **Splash animado:** animación de inicio con Lottie + hydration gating
+- **Splash animado:** splash con react-native-bootsplash + hydration gating
   (espera a que los stores de sesión y tema se restauren antes de
   renderizar la navegación).
 
