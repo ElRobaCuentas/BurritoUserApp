@@ -76,9 +76,7 @@ export const useUserStore = create<UserState>()(
           console.error("Error al leer el disco duro:", error);
         }
         // Pase lo que pase, le decimos a App.tsx que ya terminamos de cargar
-        if (state) {
-          state.setHasHydrated(true);
-        }
+        (state ?? useUserStore.getState()).setHasHydrated(true);
       },
     }
   )
