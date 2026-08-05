@@ -69,7 +69,10 @@ export const MapScreen = () => {
     };
     initAnalytics();
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      actions.stopTracking();
+    };
   }, []);
 
   useEffect(() => {
