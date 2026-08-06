@@ -37,7 +37,7 @@ const BURRITO_COLORS = {
 };
 
 export const MapScreen = () => {
-  const { locations, actions } = useBurritoStore();
+  const { locations, actions, isConnecting, connectionError } = useBurritoStore();
   const { isDarkMode } = useThemeStore();
   const { isFollowing, setCommand } = useMapStore();
   const { openDrawer } = useDrawerStore();
@@ -46,8 +46,6 @@ export const MapScreen = () => {
 
   const [minTimeReached, setMinTimeReached] = useState(false);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
-
-  const locationCount = Object.keys(locations).length;
 
   useEffect(() => {
     actions.startTracking();
@@ -76,10 +74,10 @@ export const MapScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (minTimeReached && locationCount > 0) {
+    if (minTimeReached && !isConnecting) {
       setHasInitialLoad(true);
     }
-  }, [locationCount, minTimeReached]);
+  }, [isConnecting, minTimeReached]);
 
   const loadingGradient = isDarkMode
     ? ['#121212', BURRITO_COLORS.darkPrimary]
@@ -93,9 +91,14 @@ export const MapScreen = () => {
     openDrawer();
   };
 
+  const handleRetry = () => {
+    setHasInitialLoad(false);
+    actions.startTracking();
+  };
+
   const locationValues = Object.values(locations);
   const isBusActive = locationValues.some(loc => loc.isActive !== false);
-  const isBusResting = locationCount > 0 && locationValues.every(loc => loc.isActive === false);
+  const isBusResting = hasInitialLoad && !connectionError && locationValues.every(loc => loc.isActive === false);
 
   return (
     <View style={styles.container}>
@@ -109,7 +112,7 @@ export const MapScreen = () => {
         <Map locations={locations} isDarkMode={isDarkMode} />
       </View>
 
-      {!hasInitialLoad && (
+      {!hasInitialLoad && !connectionError && (
         <Animated.View
           exiting={FadeOut.duration(600)}
           style={styles.loadingOverlay}
@@ -131,10 +134,10 @@ export const MapScreen = () => {
         </Animated.View>
       )}
 
-      {hasInitialLoad && (
+      {(hasInitialLoad || connectionError) && (
         <View style={styles.uiLayer} pointerEvents="box-none">
 
-          <MapBranding isDarkMode={isDarkMode} />
+          {!connectionError && <MapBranding isDarkMode={isDarkMode} />}
 
           <View
             style={[
@@ -160,19 +163,42 @@ export const MapScreen = () => {
             )}
           </View>
 
-          <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: insets.bottom }} pointerEvents="box-none">
-            <FAB
-              isFollowingBus={isFollowing}
-              onFollowBus={() => {
-                analytics().logEvent('bus_seguido'); 
-                setCommand('follow');
-              }}
-              onCenterMap={() => {
-                analytics().logEvent('mapa_centrado'); 
-                setCommand('center');
-              }}
-              isBusActive={isBusActive}
-            />
+          {!connectionError && (
+            <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: insets.bottom }} pointerEvents="box-none">
+              <FAB
+                isFollowingBus={isFollowing}
+                onFollowBus={() => {
+                  analytics().logEvent('bus_seguido'); 
+                  setCommand('follow');
+                }}
+                onCenterMap={() => {
+                  analytics().logEvent('mapa_centrado'); 
+                  setCommand('center');
+                }}
+                isBusActive={isBusActive}
+              />
+            </View>
+          )}
+        </View>
+      )}
+
+      {connectionError && (
+        <View style={styles.errorOverlay} pointerEvents="box-none">
+          <View style={[styles.errorCard, { backgroundColor: isDarkMode ? '#1A1A2E' : '#FFFFFF' }]}>
+            <Icon name="wifi-off" size={48} color={BURRITO_COLORS.primary} />
+            <Text style={[styles.errorTitle, { color: isDarkMode ? '#FFFFFF' : '#333' }]}>
+              Sin conexión
+            </Text>
+            <Text style={[styles.errorSubtitle, { color: isDarkMode ? '#A0A0A0' : '#666666' }]}>
+              Revisa tu conexión a internet e inténtalo de nuevo.
+            </Text>
+            <TouchableOpacity
+              onPress={handleRetry}
+              activeOpacity={0.8}
+              style={styles.retryButton}
+            >
+              <Text style={styles.retryButtonText}>REINTENTAR</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -259,5 +285,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFFFFF',
     letterSpacing: 0.5,
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  errorCard: {
+    alignItems: 'center',
+    padding: 28,
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  errorTitle: {
+    fontFamily: TYPOGRAPHY.primary.bold,
+    fontSize: 20,
+    marginTop: 16,
+    letterSpacing: 0.5,
+  },
+  errorSubtitle: {
+    fontFamily: TYPOGRAPHY.primary.regular,
+    fontSize: 14,
+    marginTop: 6,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  retryButton: {
+    marginTop: 24,
+    backgroundColor: BURRITO_COLORS.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 25,
+    elevation: 4,
+  },
+  retryButtonText: {
+    fontFamily: TYPOGRAPHY.primary.bold,
+    fontSize: 14,
+    color: '#FFFFFF',
+    letterSpacing: 1,
   },
 });

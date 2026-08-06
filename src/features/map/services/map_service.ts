@@ -16,12 +16,14 @@ const FEEDBACK_PATH = '/comentarios';
 
 export const MapService = {
 
-    subscribeToBusLocations: (onUpdate: (locations: Record<string, BurritoLocation>) => void) => {
+    subscribeToBusLocations: (
+        onUpdate: (locations: Record<string, BurritoLocation>) => void,
+        onError?: (error: Error) => void,
+    ) => {
         const ref = firebaseDatabase.ref(BUSES_LOCATION_PATH);
 
         const onValueChange = ref.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
+            const data = snapshot.val() ?? {};
 
             const locations: Record<string, BurritoLocation> = {};
             Object.keys(data).forEach((placa) => {
@@ -37,7 +39,7 @@ export const MapService = {
             });
 
             onUpdate(locations);
-        });
+        }, onError);
 
         return () => ref.off('value', onValueChange);
     },
