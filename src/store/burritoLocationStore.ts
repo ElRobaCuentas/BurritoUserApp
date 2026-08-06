@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { BurritoLocation } from '../features/map/types';
 import { MapService } from '../features/map/services/map_service';
 
+export const CONNECTION_TIMEOUT_MS = 10000;
+
 export type BusMovementStatus = 'moving' | 'stopped' | 'offline';
 
 export const getMovementStatus = (timestampAge: number, isActive: boolean): BusMovementStatus => {
@@ -13,6 +15,7 @@ export const getMovementStatus = (timestampAge: number, isActive: boolean): BusM
 interface BurritoStoreState {
   locations: Record<string, BurritoLocation>;
   isConnecting: boolean;
+  connectionError: boolean;
   busMovementStates: Record<string, BusMovementStatus>;
 
   actions: {
@@ -24,20 +27,25 @@ interface BurritoStoreState {
 export const useBurritoStore = create<BurritoStoreState>((set, get) => {
   let stopBusLocationsTracking: (() => void) | undefined;
   let onlineInterval: ReturnType<typeof setTimeout> | undefined;
+  let connectTimeout: ReturnType<typeof setTimeout> | undefined;
 
   return {
     locations: {},
     isConnecting: false,
+    connectionError: false,
     busMovementStates: {},
 
     actions: {
       startTracking: () => {
         if (stopBusLocationsTracking) stopBusLocationsTracking();
         if (onlineInterval) clearInterval(onlineInterval);
+        if (connectTimeout) clearTimeout(connectTimeout);
 
-        set({ isConnecting: true, locations: {}, busMovementStates: {} });
+        set({ isConnecting: true, connectionError: false, locations: {}, busMovementStates: {} });
 
         stopBusLocationsTracking = MapService.subscribeToBusLocations((newLocations) => {
+          if (connectTimeout) clearTimeout(connectTimeout);
+
           const now = Date.now();
 
           set((state) => {
@@ -58,10 +66,20 @@ export const useBurritoStore = create<BurritoStoreState>((set, get) => {
             return {
               locations: mergedLocations,
               isConnecting: false,
+              connectionError: false,
               busMovementStates: mergedStates,
             };
           });
+        }, () => {
+          if (connectTimeout) clearTimeout(connectTimeout);
+          set({ isConnecting: false, connectionError: true });
         });
+
+        // Si el listener no entrega ningún snapshot ni error en CONNECTION_TIMEOUT_MS,
+        // se marca el estado degradado en vez de quedarse cargando indefinidamente.
+        connectTimeout = setTimeout(() => {
+          set({ isConnecting: false, connectionError: true });
+        }, CONNECTION_TIMEOUT_MS);
 
         // Revisa cada 2 segundos el estado de todas las placas
         onlineInterval = setInterval(() => {
@@ -86,7 +104,11 @@ export const useBurritoStore = create<BurritoStoreState>((set, get) => {
           clearInterval(onlineInterval);
           onlineInterval = undefined;
         }
-        set({ locations: {}, isConnecting: false, busMovementStates: {} });
+        if (connectTimeout) {
+          clearTimeout(connectTimeout);
+          connectTimeout = undefined;
+        }
+        set({ locations: {}, isConnecting: false, connectionError: false, busMovementStates: {} });
       }
     }
   };

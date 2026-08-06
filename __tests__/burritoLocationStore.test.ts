@@ -23,7 +23,7 @@ describe('burritoLocationStore - filtro de aduana', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     useBurritoStore.getState().actions.stopTracking();
-    useBurritoStore.setState({ locations: {}, busMovementStates: {}, isConnecting: false });
+    useBurritoStore.setState({ locations: {}, busMovementStates: {}, isConnecting: false, connectionError: false });
     jest.clearAllMocks();
 
     useBurritoStore.getState().actions.startTracking();
@@ -103,5 +103,78 @@ describe('burritoLocationStore - filtro de aduana', () => {
     expect(useBurritoStore.getState().locations).toEqual({});
     expect(useBurritoStore.getState().busMovementStates).toEqual({});
     expect(useBurritoStore.getState().isConnecting).toBe(false);
+  });
+});
+
+describe('burritoLocationStore - estados de conexión (C4.5)', () => {
+  let onUpdate: (locations: Record<string, BurritoLocation>) => void;
+  let onError: (error: Error) => void;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    useBurritoStore.getState().actions.stopTracking();
+    useBurritoStore.setState({ locations: {}, busMovementStates: {}, isConnecting: false, connectionError: false });
+    jest.clearAllMocks();
+
+    useBurritoStore.getState().actions.startTracking();
+
+    const mockSubscribe = MapService.subscribeToBusLocations as jest.Mock;
+    onUpdate = mockSubscribe.mock.calls[0][0];
+    onError = mockSubscribe.mock.calls[0][1];
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('un snapshot vacío termina el loading sin marcar error', () => {
+    onUpdate({});
+
+    const state = useBurritoStore.getState();
+    expect(state.isConnecting).toBe(false);
+    expect(state.connectionError).toBe(false);
+  });
+
+  test('un error del listener marca el estado degradado', () => {
+    onError(new Error('simulado'));
+
+    const state = useBurritoStore.getState();
+    expect(state.isConnecting).toBe(false);
+    expect(state.connectionError).toBe(true);
+  });
+
+  test('el timeout de 10s sin snapshot ni error marca el estado degradado', () => {
+    jest.advanceTimersByTime(10000);
+
+    const state = useBurritoStore.getState();
+    expect(state.isConnecting).toBe(false);
+    expect(state.connectionError).toBe(true);
+  });
+
+  test('recibir un snapshot cancela el timeout', () => {
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 1000 } });
+
+    jest.advanceTimersByTime(10000);
+
+    expect(useBurritoStore.getState().connectionError).toBe(false);
+  });
+
+  test('se recupera automáticamente cuando llega un snapshot después del timeout', () => {
+    jest.advanceTimersByTime(10000);
+    expect(useBurritoStore.getState().connectionError).toBe(true);
+
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 1000 } });
+
+    const state = useBurritoStore.getState();
+    expect(state.connectionError).toBe(false);
+    expect(state.locations['ABC-123']).toBeDefined();
+  });
+
+  test('stopTracking cancela el timeout', () => {
+    useBurritoStore.getState().actions.stopTracking();
+
+    jest.advanceTimersByTime(10000);
+
+    expect(useBurritoStore.getState().connectionError).toBe(false);
   });
 });
