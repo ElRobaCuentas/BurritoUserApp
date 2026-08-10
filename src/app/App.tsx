@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react'; 
-import { View, StyleSheet, StatusBar, AppState, AppStateStatus } from 'react-native';
+import React, { useEffect, useRef } from 'react'; 
+import { StatusBar, AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
@@ -12,7 +12,7 @@ import { GOOGLE_WEB_CLIENT_ID } from '@env';
 import { StackNavigator } from './navigations/StackNavigator';
 import { useUserStore } from '../store/userStore'; 
 import { useThemeStore } from '../store/themeStore'; 
-import { AnimatedSplash } from './screen/AnimatedSplash';
+import BootSplash from 'react-native-bootsplash';
 
 GoogleSignin.configure({
   webClientId: GOOGLE_WEB_CLIENT_ID,
@@ -36,8 +36,6 @@ const CustomDarkTheme = {
 };
 
 const App = () => {
-  const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
-  
   const appState = useRef(AppState.currentState);
 
   const userHydrated        = useUserStore((state: any) => state._hasHydrated);
@@ -80,21 +78,20 @@ const App = () => {
       <SafeAreaProvider>
         
         <StatusBar 
-          backgroundColor={showAnimatedSplash ? '#00AEEF' : (isDarkMode ? '#000' : '#FFF')} 
-          barStyle={showAnimatedSplash ? 'light-content' : (isDarkMode ? 'light-content' : 'dark-content')}
+          backgroundColor={isDarkMode ? '#000' : '#FFF'} 
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
           animated={true}
         />
         
         {appIsFullyReady && (
-          <NavigationContainer theme={isDarkMode ? CustomDarkTheme : CustomLightTheme}>
+          <NavigationContainer
+            theme={isDarkMode ? CustomDarkTheme : CustomLightTheme}
+            onReady={() => {
+              requestAnimationFrame(() => BootSplash.hide({ fade: true }));
+            }}
+          >
             <StackNavigator />
           </NavigationContainer>
-        )}
-
-        {showAnimatedSplash && (
-          <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
-            <AnimatedSplash onFinish={() => setShowAnimatedSplash(false)} />
-          </View>
         )}
 
       </SafeAreaProvider>
