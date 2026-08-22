@@ -102,7 +102,7 @@ src/
 ## Cómo funciona el Realtime
 
 1. **El Listener:** La app se conecta a Firebase RTDB (nodo
-   `/ubicacion_burrito`) mediante un listener continuo. Firebase empuja
+   `/ubicacion_buses`) mediante un listener continuo. Firebase empuja
    los cambios en milisegundos.
 
 2. **El Amortiguador (Zustand):** El listener escribe los datos en
