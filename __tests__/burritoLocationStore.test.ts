@@ -7,7 +7,7 @@ jest.mock('../src/features/map/services/map_service', () => ({
 }));
 
 import { MapService } from '../src/features/map/services/map_service';
-import { useBurritoStore } from '../src/store/burritoLocationStore';
+import { useBurritoStore, MOVEMENT_THRESHOLD_M } from '../src/store/burritoLocationStore';
 
 const baseLocation: BurritoLocation = {
   latitude: -12.0575,
@@ -23,7 +23,7 @@ describe('burritoLocationStore - filtro de aduana', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     useBurritoStore.getState().actions.stopTracking();
-    useBurritoStore.setState({ locations: {}, busMovementStates: {}, isConnecting: false, connectionError: false });
+    useBurritoStore.setState({ locations: {}, busMovementStates: {}, movementDisplacements: {}, movementMemory: {}, isConnecting: false, connectionError: false });
     jest.clearAllMocks();
 
     useBurritoStore.getState().actions.startTracking();
@@ -94,6 +94,73 @@ describe('burritoLocationStore - filtro de aduana', () => {
     dateSpy.mockRestore();
   });
 
+  test('debería marcar como offline un bus activo con timestamp obsoleto (C4.6)', () => {
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(40000);
+
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 1000, isActive: true } });
+
+    const state = useBurritoStore.getState();
+    expect(state.busMovementStates['ABC-123']).toBe('offline');
+
+    dateSpy.mockRestore();
+  });
+
+  test('debería marcar "stopped" cuando el bus no se desplaza entre snapshots (C4.6, estrategia C con histeresis)', () => {
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(5000);
+
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 1000 } });
+    // Sin evidencia (dist=0) una sola vez: aún no es suficiente para parar.
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 2000 } });
+    expect(useBurritoStore.getState().busMovementStates['ABC-123']).toBe('moving');
+
+    // Segunda medición consecutiva sin evidencia (dist=0): STOP_CONFIRM_PAIRS=2.
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 3000 } });
+    const state = useBurritoStore.getState();
+    expect(state.busMovementStates['ABC-123']).toBe('stopped');
+    expect(state.movementDisplacements['ABC-123']).toBe(0);
+
+    dateSpy.mockRestore();
+  });
+
+  test('debería marcar "moving" cuando el bus se desplaza entre snapshots (C4.6)', () => {
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(5000);
+
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 1000 } });
+    onUpdate({
+      'ABC-123': {
+        ...baseLocation,
+        latitude: -12.0,
+        longitude: -77.0,
+        timestamp: 2000,
+      },
+    });
+
+    const state = useBurritoStore.getState();
+    expect(state.busMovementStates['ABC-123']).toBe('moving');
+    expect(state.movementDisplacements['ABC-123']).toBeGreaterThan(MOVEMENT_THRESHOLD_M);
+
+    dateSpy.mockRestore();
+  });
+
+  test('debería quedar "offline" aunque se mueva si el timestamp ya expiró (C4.6)', () => {
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(40000);
+
+    onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 1000 } });
+    onUpdate({
+      'ABC-123': {
+        ...baseLocation,
+        latitude: -12.0,
+        longitude: -77.0,
+        timestamp: 2000,
+      },
+    });
+
+    const state = useBurritoStore.getState();
+    expect(state.busMovementStates['ABC-123']).toBe('offline');
+
+    dateSpy.mockRestore();
+  });
+
   test('debería limpiar el estado al hacer stopTracking', () => {
     onUpdate({ 'ABC-123': { ...baseLocation, timestamp: 1000 } });
     expect(Object.keys(useBurritoStore.getState().locations).length).toBeGreaterThan(0);
@@ -113,7 +180,7 @@ describe('burritoLocationStore - estados de conexión (C4.5)', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     useBurritoStore.getState().actions.stopTracking();
-    useBurritoStore.setState({ locations: {}, busMovementStates: {}, isConnecting: false, connectionError: false });
+    useBurritoStore.setState({ locations: {}, busMovementStates: {}, movementDisplacements: {}, isConnecting: false, connectionError: false });
     jest.clearAllMocks();
 
     useBurritoStore.getState().actions.startTracking();

@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { StyleSheet, View, Text, Easing as RNEasing, Animated as RNAnimated, TouchableOpacity } from 'react-native'; 
+import { StyleSheet, View, Text, Easing as RNEasing, Animated as RNAnimated } from 'react-native'; 
 import Mapbox from '@rnmapbox/maps';
 import { COLORS } from '../../../shared/theme/colors';
 import { PARADEROS, RUTA_GEOJSON, PARADEROS_GEOJSON} from '../constants/map_route';
-import { calculateDistance } from '../utils/geo';
 import { StopCard } from './StopCard'; 
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useMapStore } from '../../../store/mapStore'; 
 import { useBurritoStore, BusMovementStatus } from '../../../store/burritoLocationStore'; 
 import { BurritoLocation } from '../types';
@@ -229,7 +227,7 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
     radarBgColor = 'rgba(255, 152, 0, 0.35)';
   }
 
-  const showBusOnMap = burritoLocation && burritoLocation.isActive !== false;
+  const showBusOnMap = burritoLocation && busMovementStatus !== 'offline';
   const showRadar = busMovementStatus !== 'offline';
 
   return (

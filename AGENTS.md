@@ -314,11 +314,13 @@ Haversine. Sin tests, el error sería invisible:
 ### Regla: No eliminar tests unitarios
 
 - **Nunca borres** `__tests__/calculateDistance.test.ts`,
-  `__tests__/getMovementStatus.test.ts` o
+  `__tests__/getMovementStatus.test.ts`,
+  `__tests__/movement.test.ts` o
   `__tests__/burritoLocationStore.test.ts`.
 - Son la única barrera contra regresiones matemáticas en el pipeline.
-- Si un refactor cambia la firma de `calculateDistance` o `getMovementStatus`,
-  los tests deben actualizarse, no eliminarse.
+- Si un refactor cambia la firma de `calculateDistance`, `getMovementStatus`,
+  `evaluateMovementEvidence` o `nextMovementStatus`, los tests deben
+  actualizarse, no eliminarse.
 - Si una dependencia nativa deja de ser compatible, se mockea en el test,
   no se elimina el test.
 
@@ -337,8 +339,20 @@ documentación ejecutable. Definen los límites del sistema:
 | Test | Qué protege |
 |------|-------------|
 | `calculateDistance(0,0,0,1) ≈ 111km` | Fórmula del ecuador |
-| `getMovementStatus(12000, true) === 'stopped'` | Umbral de 12 segundos |
+| `isBusMoving(MOVEMENT_THRESHOLD_M + 0.001) === true` | Umbral de movimiento de la estrategia A (8m, histórica; ya NO decide el estado en vivo desde C4.6 experimental) |
+| `evaluateMovementEvidence({dist:0, dtMs:3000, speedMps:2.78}) === false` | Speed congelada del heartbeat no engaña (C4.6 experimental) |
+| `nextMovementStatus` con 2 parejas consecutivas sin evidencia === `stopped` | Histeresis mínima de la estrategia C (C4.6 experimental) |
+| `getMovementStatus({ timestampAge: 12000, isActive: true, displacementMeters: undefined }) === 'stopped'` | Fallback de edad de 12s para el primer snapshot |
+| `getMovementStatus({ timestampAge: 30000, isActive: true, displacementMeters: 100 }) === 'offline'` | Umbral de obsoleto (C4.6, 30s): el bus se oculta aunque `isActive` siga en `true` y se haya movido |
 | Filtro de aduana rechaza timestamp ≤ previo | Consistencia multi-bus |
+
+> **C4.6 (estado actual):** la decisión en vivo EN MOVIMIENTO/EN PARADERO usa
+> la **estrategia C experimental** (`src/features/map/utils/movement.ts`):
+> distancia + Δt + speed condicional + memoria (2 parejas sin evidencia →
+> PARADERO). Parámetros = CALIBRACIÓN PENDIENTE hasta validación en campo
+> (ADR-020). `MOVEMENT_THRESHOLD_M` (8 m, estrategia A) queda solo para
+> comparación offline A vs C, tests y simulación. El diagnóstico temporal
+> `CALIB_LOG_ENABLED` se eliminará al terminar la evaluación.
 
 Cada uno de estos tests es un **contrato** entre el código y el
 comportamiento esperado. Si el contrato se rompe, el test falla.

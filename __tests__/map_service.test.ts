@@ -57,7 +57,24 @@ describe('MapService.subscribeToBusLocations', () => {
     });
 
     expect(onUpdate).toHaveBeenCalledWith({
-      'ABC-123': { latitude: -12.05, longitude: -77.08, heading: 90, isActive: true, timestamp: 1000 },
+      'ABC-123': { latitude: -12.05, longitude: -77.08, heading: 90, isActive: true, timestamp: 1000, speed: 0 },
+    });
+  });
+
+  test('preserva el speed publicado por la DriverApp (C4.6)', () => {
+    const onUpdate = jest.fn();
+    MapService.subscribeToBusLocations(onUpdate);
+
+    const ref = getRef();
+    const valueHandler = ref.on.mock.calls[0][1];
+    valueHandler({
+      val: () => ({
+        'ABC-123': { latitude: -12.05, longitude: -77.08, heading: 90, isActive: true, timestamp: 1000, speed: 2.78 },
+      }),
+    });
+
+    expect(onUpdate).toHaveBeenCalledWith({
+      'ABC-123': { latitude: -12.05, longitude: -77.08, heading: 90, isActive: true, timestamp: 1000, speed: 2.78 },
     });
   });
 

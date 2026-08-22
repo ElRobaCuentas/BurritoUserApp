@@ -35,6 +35,7 @@ export const MapService = {
                     heading: entry.heading ?? 0,
                     isActive: entry.isActive ?? false,
                     timestamp: entry.timestamp ?? Date.now(),
+                    speed: entry.speed ?? 0,
                 };
             });
 
