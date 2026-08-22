@@ -15,7 +15,7 @@ export const FAB = ({ onCenterMap }: FABProps) => {
       style={[
         styles.container,
         {
-          bottom: Platform.OS === 'android' ? insets.bottom + 84 : insets.bottom + 10 + 64
+          bottom: Platform.OS === 'android' ? insets.bottom + 52 : insets.bottom + 42
         }
       ]}
     >
