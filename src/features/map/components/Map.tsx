@@ -50,7 +50,7 @@ interface MapProps {
 export const Map = ({ locations, isDarkMode }: MapProps) => {
   const cameraRef = useRef<Mapbox.Camera>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
-  const { isFollowing, setIsFollowing, command, setCommand } = useMapStore();
+  const { command, setCommand } = useMapStore();
   
   const busMovementStates = useBurritoStore((state) => state.busMovementStates);
 
@@ -183,36 +183,15 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
 
   useEffect(() => {
     if (command === 'center') {
-      cameraRef.current?.setCamera({ 
-        centerCoordinate: UNMSM_STATIC_VIEW.center, 
-        zoomLevel: UNMSM_STATIC_VIEW.zoom, 
-        animationDuration: 2000, 
-        animationMode: 'flyTo' 
+      cameraRef.current?.setCamera({
+        centerCoordinate: UNMSM_STATIC_VIEW.center,
+        zoomLevel: UNMSM_STATIC_VIEW.zoom,
+        animationDuration: 2000,
+        animationMode: 'flyTo'
       });
-      setIsFollowing(false); 
-      setCommand(null);
-    } else if (command === 'follow' && currentPos) {
-      cameraRef.current?.setCamera({ 
-        centerCoordinate: currentPos as [number, number],
-        zoomLevel: 17.5, 
-        animationDuration: 2000, 
-        animationMode: 'flyTo' 
-      });
-      setIsFollowing(true); 
       setCommand(null);
     }
-  }, [command, currentPos]);
-
-  useEffect(() => {
-    if (isFollowing && currentPos && burritoLocation?.isActive !== false) {
-      cameraRef.current?.setCamera({ 
-        centerCoordinate: currentPos as [number, number],
-        zoomLevel: 17.5, 
-        animationDuration: 3000, 
-        animationMode: 'linearTo' 
-      }); 
-    }
-  }, [currentPos, isFollowing]);
+  }, [command]);
 
   const selectedStop = useMemo(() => PARADEROS.find(p => p.id === selectedStopId), [selectedStopId]);
   
@@ -249,7 +228,6 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
         logoEnabled={false}
         styleURL={isDarkMode ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Street}
         onDidFinishLoadingMap={() => setIsMapReady(true)}
-        onRegionWillChange={(e) => { if (e.properties.isUserInteraction) setIsFollowing(false); }}
         onPress={() => setSelectedStopId(null)}
       >
         <Mapbox.Camera 

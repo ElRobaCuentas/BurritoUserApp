@@ -39,7 +39,7 @@ const BURRITO_COLORS = {
 export const MapScreen = () => {
   const { locations, actions, isConnecting, connectionError } = useBurritoStore();
   const { isDarkMode } = useThemeStore();
-  const { isFollowing, setCommand } = useMapStore();
+  const { setCommand } = useMapStore();
   const { openDrawer } = useDrawerStore();
 
   const insets = useSafeAreaInsets();
@@ -97,7 +97,6 @@ export const MapScreen = () => {
   };
 
   const locationValues = Object.values(locations);
-  const isBusActive = locationValues.some(loc => loc.isActive !== false);
   const isBusResting = hasInitialLoad && !connectionError && locationValues.every(loc => loc.isActive === false);
 
   return (
@@ -166,16 +165,10 @@ export const MapScreen = () => {
           {!connectionError && (
             <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: insets.bottom }} pointerEvents="box-none">
               <FAB
-                isFollowingBus={isFollowing}
-                onFollowBus={() => {
-                  analytics().logEvent('bus_seguido'); 
-                  setCommand('follow');
-                }}
                 onCenterMap={() => {
-                  analytics().logEvent('mapa_centrado'); 
+                  analytics().logEvent('mapa_centrado');
                   setCommand('center');
                 }}
-                isBusActive={isBusActive}
               />
             </View>
           )}
