@@ -22,6 +22,11 @@ Mapbox.setAccessToken(MAPBOX_PUBLIC_TOKEN);
 
 const UNMSM_STATIC_VIEW = { center: [-77.0830, -12.0575] as [number, number], zoom: 15.1 };
 
+const UNMSM_BOUNDS = {
+  ne: [-77.0600, -12.0300] as [number, number],
+  sw: [-77.1100, -12.0850] as [number, number]
+};
+
 const STOP_COLORS = {
   light: { bg: '#E65100', border: '#FFFFFF', icon: '#FFFFFF' },
   dark: { bg: '#FFB74D', border: '#1A1A1A', icon: '#1A1A1A' }
@@ -72,6 +77,7 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
   }, [locations, busMovementStates]);
 
   const [isMapReady, setIsMapReady] = useState(false);
+  const [boundsActive, setBoundsActive] = useState(false);
   const [isFirstBusLoad, setIsFirstBusLoad] = useState(true);
 
   const latAnim = useRef(new RNAnimated.Value(UNMSM_STATIC_VIEW.center[1])).current;
@@ -99,6 +105,12 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
     }
     return () => { if (timer) clearTimeout(timer); };
   }, [selectedStopId]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    const timer = setTimeout(() => setBoundsActive(true), 800);
+    return () => clearTimeout(timer);
+  }, [isMapReady]);
 
   useEffect(() => {
     radarAnimValue.stopAnimation();
@@ -232,6 +244,7 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
       >
         <Mapbox.Camera 
           ref={cameraRef} 
+          maxBounds={boundsActive ? UNMSM_BOUNDS : undefined}
           defaultSettings={{ 
             centerCoordinate: UNMSM_STATIC_VIEW.center, 
             zoomLevel: UNMSM_STATIC_VIEW.zoom 
