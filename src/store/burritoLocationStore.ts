@@ -36,7 +36,7 @@ export const MOVEMENT_THRESHOLD_M = 8;
 // Diagnóstico temporal para la prueba de campo. Cuando está activo, cada
 // actualización de estado registra por qué se decidió MOVIMIENTO/PARADERO.
 // Se elimina al terminar la evaluación: no es logging de producción.
-export const CALIB_LOG_ENABLED = true;
+export const CALIB_LOG_ENABLED = false;
 
 // C4.6: heurística de fallback para el primer snapshot de un bus (aún no
 // hay desplazamiento previo): con edad menor a esta se asume moving, si no
