@@ -224,14 +224,16 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
   return (
     <View style={styles.container}>
       
-      <View style={styles.debugPanel}>
-        <Text style={styles.debugTitle}>RADAR DE DATOS RAW</Text>
-        {debugLogs.map((log, index) => (
-          <Text key={index} style={styles.debugText}>
-             {index === 0 ? '▶ ' : '  '}{log}
-          </Text>
-        ))}
-      </View>
+      {__DEV__ && (
+        <View style={styles.debugPanel}>
+          <Text style={styles.debugTitle}>RADAR DE DATOS RAW</Text>
+          {debugLogs.map((log, index) => (
+            <Text key={index} style={styles.debugText}>
+               {index === 0 ? '▶ ' : '  '}{log}
+            </Text>
+          ))}
+        </View>
+      )}
 
       <Mapbox.MapView
         style={styles.map} 
