@@ -149,6 +149,7 @@ export const CustomDrawer = () => {
         
         <LinearGradient colors={theme.headerGradient} style={styles.header}>
           <Text style={styles.brandText}>EL BURRITO</Text>
+          <Text style={styles.brandSubtext}>by Eventual</Text>
         </LinearGradient>
 
         <View style={styles.avatarWrapper}>
@@ -200,7 +201,7 @@ export const CustomDrawer = () => {
                 <Icon name="star" size={20} color="#FFD700" />
               </View>
               <Text style={[styles.bentoTitle, { color: theme.text }]}>Opinar</Text>
-              <Text style={[styles.bentoSubtitle, { color: COLORS.primary, marginTop: 10 }]}>Calificar App</Text>
+              <Text style={[styles.bentoSubtitle, { color: COLORS.primary, marginTop: 10 }]}>Feedback</Text>
             </TouchableOpacity>
           </View>
 
@@ -325,7 +326,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden', position: 'absolute', left: 0, top: 0, bottom: 0,
   },
   header:    { height: 160, paddingTop: 40, alignItems: 'center' },
-  brandText: { color: 'white', fontSize: 14, fontFamily: TYPOGRAPHY.primary.bold, opacity: 0.9, letterSpacing: 2, marginTop: 18 },  
+  brandText: { color: 'white', fontSize: 14, fontFamily: TYPOGRAPHY.primary.bold, opacity: 0.9, letterSpacing: 2, marginTop: 18 },
+  brandSubtext: { color: 'white', fontSize: 11, fontFamily: TYPOGRAPHY.primary.regular, opacity: 0.7, letterSpacing: 1, marginTop: 2 },
   
   avatarWrapper:  { alignItems: 'center', marginTop: -50, marginBottom: 10 },
   avatarShadow: {
