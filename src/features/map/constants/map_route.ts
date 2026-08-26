@@ -57,16 +57,16 @@ export const RUTA_GEOJSON: any = {
 };
 
 export const PARADEROS = [
-  { id: '1', latitude: -12.054874, longitude: -77.085864, name: 'Odontología' }, 
-  { id: '2', latitude: -12.056032, longitude: -77.084961, name: 'Plaza Cívica' }, 
-  { id: '3', latitude: -12.059645, longitude: -77.084506, name: 'Gimnasio' },     
+  { id: '1', latitude: -12.0548495, longitude: -77.0861282, name: 'Odontología' }, 
+  { id: '2', latitude: -12.0562529, longitude: -77.0850942, name: 'Plaza Cívica' }, 
+  { id: '3', latitude: -12.0600412, longitude: -77.0844260, name: 'Gimnasio' },     
   { id: '4', latitude: -12.060779, longitude: -77.082937, name: 'Comedor' },      
   { id: '5', latitude: -12.060286, longitude: -77.080576, name: 'Ing. Industrial' },
   { id: '6', latitude: -12.059591, longitude: -77.079673, name: 'Puerta 2' },
-  { id: '7', latitude: -12.057659, longitude: -77.080160, name: 'F. de Derecho' },
+  { id: '7', latitude: -12.0578857, longitude: -77.0800969, name: 'Ciencias contables' },
   { id: '8', latitude: -12.055556, longitude: -77.082098, name: 'Clínica' },
-  { id: '9', latitude: -12.054729, longitude: -77.083637, name: 'Puerta 7' },
-  { id: '10', latitude: -12.053732, longitude: -77.085652, name: 'Sistemas' },
+  { id: '9', latitude: -12.0542262, longitude: -77.0843616, name: 'Puerta 7' },
+  { id: '10', latitude: -12.053732, longitude: -77.085652, name: 'Ing. Sistemas' },
 ];
 
 
