@@ -27,6 +27,10 @@ const UNMSM_BOUNDS = {
   sw: [-77.1100, -12.0850] as [number, number]
 };
 
+// T1.2: panel de diagnóstico DESACTIVADO para el lanzamiento a pruebas.
+// Reactivar en desarrollo: cambiar a true (sigue limitado a builds debug por __DEV__).
+const SHOW_DEBUG_PANEL = false;
+
 const STOP_COLORS = {
   light: { bg: '#E65100', border: '#FFFFFF', icon: '#FFFFFF' },
   dark: { bg: '#FFB74D', border: '#1A1A1A', icon: '#1A1A1A' }
@@ -224,7 +228,7 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
   return (
     <View style={styles.container}>
       
-      {__DEV__ && (
+      {SHOW_DEBUG_PANEL && __DEV__ && (
         <View style={styles.debugPanel}>
           <Text style={styles.debugTitle}>RADAR DE DATOS RAW</Text>
           {debugLogs.map((log, index) => (
