@@ -50,9 +50,11 @@ export const SignUpScreen = () => {
 
   const [username,   setUsername]   = useState('');
   const [email,      setEmail]      = useState('');
-  const [password,   setPassword]   = useState('');
-  const [showPass,   setShowPass]   = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [password,        setPassword]        = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPass,        setShowPass]        = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [selectedId,      setSelectedId]      = useState<string | null>(null);
   const [loading,    setLoading]    = useState(false);
   const [googleLoad, setGoogleLoad] = useState(false);
 
@@ -76,10 +78,12 @@ export const SignUpScreen = () => {
 
   // ─── REGISTRO EMAIL / PASSWORD ────────────────────────────────────────────
   const handleRegister = async () => {
-    if (username.trim().length < 3) { Alert.alert('Nombre muy corto', 'Mínimo 3 caracteres.'); return; }
-    if (!email.trim())              { Alert.alert('Campo vacío', 'Ingresa tu correo.'); return; }
-    if (password.length < 6)        { Alert.alert('Contraseña débil', 'Mínimo 6 caracteres.'); return; }
-    if (!selectedId)                { Alert.alert('Sin avatar', 'Elige tu facultad primero.'); return; }
+    if (username.trim().length < 3)  { Alert.alert('Nombre muy corto', 'Mínimo 3 caracteres.'); return; }
+    if (!email.trim())               { Alert.alert('Campo vacío', 'Ingresa tu correo.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Correo inválido', 'Ingresa un correo con formato válido.'); return; }
+    if (password.length < 6)         { Alert.alert('Contraseña débil', 'Mínimo 6 caracteres.'); return; }
+    if (password !== confirmPassword){ Alert.alert('Contraseñas no coinciden', 'Repite tu contraseña.'); return; }
+    if (!selectedId)                 { Alert.alert('Sin avatar', 'Elige tu facultad primero.'); return; }
 
     setLoading(true);
     try {
@@ -229,6 +233,20 @@ export const SignUpScreen = () => {
               />
               <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPass(p => !p)}>
                 <Icon name={showPass ? 'eye-off-outline' : 'eye-outline'} size={22} color="#999" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={[styles.input, { paddingRight: 50 }]}
+                placeholder="Confirmar contraseña"
+                placeholderTextColor="#AAAAAA"
+                secureTextEntry={!showConfirmPass}
+                autoCapitalize="none"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowConfirmPass(p => !p)}>
+                <Icon name={showConfirmPass ? 'eye-off-outline' : 'eye-outline'} size={22} color="#999" />
               </TouchableOpacity>
             </View>
           </Animated.View>

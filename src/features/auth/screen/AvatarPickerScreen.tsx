@@ -91,6 +91,7 @@ export const AvatarPickerScreen = () => {
         nombre:         username.trim(),
         avatar:         selectedId,
         email:          email,
+        rol:            'estudiante',
         ultimaConexion: database.ServerValue.TIMESTAMP,
       });
 
