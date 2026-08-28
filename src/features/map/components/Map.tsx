@@ -245,7 +245,17 @@ export const Map = ({ locations, isDarkMode }: MapProps) => {
         attributionEnabled={false} 
         logoEnabled={false}
         styleURL={isDarkMode ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Street}
-        onDidFinishLoadingMap={() => setIsMapReady(true)}
+        onDidFinishLoadingMap={() => {
+          setIsMapReady(true);
+          // Forzar la posición inicial de la cámara tras cargar el mapa:
+          // workaround para el comportamiento de Mapbox en Android que a veces
+          // ignora defaultSettings en el primer frame y muestra otra posición.
+          cameraRef.current?.setCamera({
+            centerCoordinate: UNMSM_STATIC_VIEW.center,
+            zoomLevel: UNMSM_STATIC_VIEW.zoom,
+            animationDuration: 0,
+          });
+        }}
         onPress={() => setSelectedStopId(null)}
       >
         <Mapbox.Camera 
