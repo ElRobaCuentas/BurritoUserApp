@@ -267,7 +267,6 @@ inconsistencia documental antes de continuar.
 | Una limitación del sistema | `docs/PROJECT_CONTEXT.md` |
 | Las prioridades o fases | `docs/ROADMAP.md` |
 | Una regla de trabajo para IA | `AGENTS.md` |
-| Una nota de revisión futura | `docs/ReviewNotes.md` |
 | El setup o comandos | `README.md` |
 
 ---
@@ -284,7 +283,6 @@ inconsistencia documental antes de continuar.
       duplicado).
 - [ ] Documentación sincronizada (si cambió >1 área, todos los docs
       afectados están actualizados).
-- [ ] ReviewNotes actualizadas si una nota futura quedó resuelta.
 - [ ] Si se agregaron/quitaron dependencias, DECISIONS.md actualizado.
 
 ---
@@ -369,10 +367,8 @@ comportamiento esperado. Si el contrato se rompe, el test falla.
 | Próximas fases | `docs/ROADMAP.md` |
 | Bugs conocidos | `docs/TROUBLESHOOTING.md` |
 | Decisiones arquitectónicas | `docs/DECISIONS.md` |
-| Revisión futura | `docs/ReviewNotes.md` |
 | Historial de bugs resueltos | `docs/BUGS_RESUELTOS/` |
 | Setup del proyecto | `README.md` |
 
-Recomendación: Si debes modificar documentación, consulta primero
-ReviewNotes.md para verificar si existe alguna nota
-pendiente relacionada.
+Recomendación: consulta `docs/BUGS_RESUELTOS/` o `docs/TROUBLESHOOTING.md`
+para verificar si existe alguna nota pendiente relacionada.

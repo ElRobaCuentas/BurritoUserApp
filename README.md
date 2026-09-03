@@ -39,7 +39,12 @@ npm install
 ```
 
 **Credenciales:** El repositorio incluye `google-services.json` para
-Android. Para iOS, agregar `GoogleService-Info.plist` via Xcode.
+Android.
+
+> **iOS no está implementado en ninguna versión actual.** La app es
+> Android-only por ahora. La estructura iOS existe en el template de
+> React Native CLI, pero no está configurada ni soportada. El soporte
+> iOS está planificado para futuras versiones.
 
 Crear un archivo `.env` en la raíz con:
 ```
@@ -47,15 +52,9 @@ MAPBOX_PUBLIC_TOKEN=<tu_token>
 GOOGLE_WEB_CLIENT_ID=<tu_client_id>
 ```
 
-**iOS** (solo macOS):
-```bash
-cd ios && pod install && cd ..
-```
-
-**Ejecutar:**
+**Ejecutar (Android):**
 ```bash
 npm run android
-npm run ios
 ```
 
 ## Scripts
@@ -64,7 +63,6 @@ npm run ios
 |--------|---------|
 | Metro dev server | `npm start` |
 | Android | `npm run android` |
-| iOS | `npm run ios` |
 | Tests | `npm test` |
 | Lint | `npm run lint` |
 | Typecheck | `npx tsc --noEmit` |
@@ -76,8 +74,7 @@ src/
 ├── app/          # Entry point (App.tsx), splash, navegación
 ├── features/
 │   ├── auth/     # Login, registro, recuperar contraseña, avatar
-│   ├── map/      # Mapa, paraderos, UI flotante, tracking
-│   └── admin/    # CRUD de choferes, buses, asignaciones
+│   └── map/      # Mapa, paraderos, UI flotante, tracking
 ├── shared/       # Config Firebase, colores, tipografía
 └── store/        # 5 stores de Zustand
 ```
@@ -91,13 +88,15 @@ src/
   posición.
 - **Dark mode:** tema oscuro/claro con persistencia manual, accesible
   desde el menú lateral.
-- **Panel administrativo:** CRUD completo de choferes, buses y
-  asignaciones. Acceso restringido a usuarios con rol `admin`.
 - **Feedback:** modal de calificación y comentarios desde el menú
   lateral. Los datos se almacenan en `/comentarios`.
 - **Splash animado:** splash con react-native-bootsplash + hydration gating
   (espera a que los stores de sesión y tema se restauren antes de
   renderizar la navegación).
+
+> Nota: la gestión de conductores, buses y asignaciones **no** vive en
+> esta app. Se realiza desde el módulo admin de la DriverApp o desde
+> AdminWeb.
 
 ## Cómo funciona el Realtime
 
@@ -117,14 +116,20 @@ src/
 
 - Listener de ubicación en tiempo real funcional.
 - Autenticación completa (email y Google).
-- Panel admin con creación y cancelación de asignaciones.
 - Dark mode funcional.
-- Soporte multi-bus pendiente (actualmente muestra un solo bus).
+- Render de un solo bus. El **backend multi-bus está operativo**
+  (`/ubicacion_buses` es `Record<string, BurritoLocation>`), pero el
+  frontend aún renderiza una sola unidad. La arquitectura multi-bus
+  está planificada como Post-MVP.
 
 ## Limitaciones conocidas
 
-Actualmente la aplicación está diseñada para visualizar una única unidad en tiempo real.
-La arquitectura multi-bus se encuentra planificada para futuras versiones.
+- **Un solo bus visible:** el frontend muestra una única unidad en tiempo
+  real. El backend multi-bus ya está operativo; el render multi-marcador
+  (ShapeSource + SymbolLayer por cada bus activo) está planificado en el
+  backlog Post-MVP.
+- **iOS no implementado:** la app es Android-only en esta versión. El
+  soporte iOS está planificado para futuras versiones.
 
 
 ## Documentación Relacionada
@@ -138,5 +143,4 @@ La arquitectura multi-bus se encuentra planificada para futuras versiones.
 | `ROADMAP.md` | Fases, prioridades y tareas pendientes del proyecto. |
 | `TROUBLESHOOTING.md` | Guía operativa para diagnosticar problemas conocidos. |
 | `DECISIONS.md` | Decisiones de arquitectura (ADR) del ecosistema. |
-| `ReviewNotes.md` | Notas de revisión futura para mantenimiento de documentación. |
 | `BUGS_RESUELTOS/` | Historial de bugs resueltos durante el desarrollo. |
